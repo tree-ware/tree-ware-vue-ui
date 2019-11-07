@@ -1,5 +1,5 @@
 <template>
-  <div class="tree-ware-select" :class="{'show-options': showOptions}">
+  <div class="tree-ware-select" :class="{'options-visible': showOptions}">
     <input
       ref="inputField"
       type="text"
@@ -22,7 +22,11 @@
         :class="{'highlight': index === highlightIndex}"
       >
         <!-- TODO(deepaknulu): selection indicator -->
-        <td class="selection-indicator">&nbsp;</td>
+        <td v-if="getFrequencyCount === undefined" class="selection-indicator">&nbsp;</td>
+        <td
+          v-if="getFrequencyCount !== undefined"
+          class="frequency-count"
+        >{{getFrequencyCount(option)}}</td>
         <td class="display-name">{{getDisplayName(option)}}</td>
       </tr>
     </table>
@@ -42,6 +46,7 @@ import {
 } from "vue-property-decorator";
 
 export type GetDisplayNameFunction = (option: Object | String) => string;
+export type GetFrequencyCountFunction = (option: Object) => number;
 export type FilterOptionsFunction = (
   searchText: string,
   options: Array<Object | String>
@@ -51,22 +56,25 @@ export type CreateOptionFunction = (input: string) => Object | String;
 @Component
 export default class TreeWareSelect extends Vue {
   // TODO(deepaknulu): implement exactMatch = false functionality.
-  @Prop({ default: false }) exactMatch!: boolean;
+  @Prop({ default: false }) readonly exactMatch!: boolean;
 
   /** Auto-selects first option. Applicable only if exactMatch is true. */
-  @Prop({ default: false }) autoSelectOnBlur!: boolean;
+  @Prop({ default: false }) readonly autoSelectOnBlur!: boolean;
 
   @PropSync("value", { type: [Object, String] }) syncedValue!: Object | String;
-  @Prop({ default: () => [] }) options!: Array<Object | String>;
+  @Prop({ default: () => [] }) readonly options!: Array<Object | String>;
 
   @Prop({ default: defaultGetDisplayName })
-  getDisplayName!: GetDisplayNameFunction;
+  readonly getDisplayName!: GetDisplayNameFunction;
+
+  @Prop() readonly getFrequencyCount?: GetFrequencyCountFunction;
 
   @Prop({ default: defaultFilterOptions })
-  filterOptions!: FilterOptionsFunction;
+  readonly filterOptions!: FilterOptionsFunction;
 
   /** A function to create an option object from a user's input string */
-  @Prop({ default: defaultCreateOption }) createOption!: CreateOptionFunction;
+  @Prop({ default: defaultCreateOption })
+  readonly createOption!: CreateOptionFunction;
 
   @Ref() readonly inputField!: HTMLInputElement;
 
@@ -174,10 +182,12 @@ function defaultCreateOption(input: string): Object | String {
 <style lang="scss" scoped>
 $border-radius: 5px;
 $border-width: 1px;
+$background-color: white;
 $font-size: 14px;
 $line-height-multiplier: 1.8;
 $padding: 5px;
 $primary-color: gray;
+$secondary-color: lightgray;
 
 .tree-ware-select {
   box-sizing: content-box;
@@ -197,6 +207,7 @@ $primary-color: gray;
   }
 
   .tree-ware-select-options {
+    background-color: $background-color;
     border: $border-width solid $primary-color;
     border-bottom-left-radius: $border-radius;
     border-bottom-right-radius: $border-radius;
@@ -215,6 +226,11 @@ $primary-color: gray;
         padding: $padding;
       }
 
+      .frequency-count {
+        text-align: right;
+        border-right: 1px solid $primary-color;
+      }
+
       .display-name {
         width: 100%;
       }
@@ -223,14 +239,14 @@ $primary-color: gray;
         background-color: $primary-color;
       }
       &:hover {
-        background-color: $primary-color;
+        background-color: $secondary-color;
         cursor: pointer;
       }
     }
   }
 }
 
-.show-options {
+.options-visible {
   input {
     border-bottom-left-radius: 0px;
     border-bottom-right-radius: 0px;
