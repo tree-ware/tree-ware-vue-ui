@@ -37,7 +37,6 @@
 import "reflect-metadata";
 import {
   Component,
-  Emit,
   Prop,
   PropSync,
   Ref,
@@ -47,10 +46,10 @@ import {
 
 export type GetDisplayNameFunction = (option: Object | String) => string;
 export type GetFrequencyCountFunction = (option: Object) => number;
-export type FilterOptionsFunction = (
+export type MatchFunction = (
   searchText: string,
-  options: Array<Object | String>
-) => Array<Object | String>;
+  option: Object | String
+) => boolean;
 export type CreateOptionFunction = (input: string) => Object | String;
 
 @Component
@@ -69,8 +68,8 @@ export default class TreeWareSelect extends Vue {
 
   @Prop() readonly getFrequencyCount?: GetFrequencyCountFunction;
 
-  @Prop({ default: defaultFilterOptions })
-  readonly filterOptions!: FilterOptionsFunction;
+  @Prop({ default: defaultIsExactMatch }) readonly isExactMatch!: MatchFunction;
+  @Prop({ default: defaultIsMatch }) readonly isMatch!: MatchFunction;
 
   /** A function to create an option object from a user's input string */
   @Prop({ default: defaultCreateOption })
@@ -89,7 +88,7 @@ export default class TreeWareSelect extends Vue {
 
   private get matchingOptions(): Array<Object | String> {
     if (!this.searchText) return this.options;
-    return this.filterOptions(this.searchText, this.options);
+    return this.options.filter(option => this.isMatch(this.searchText, option));
   }
 
   private inputFocussed(): void {
@@ -100,11 +99,17 @@ export default class TreeWareSelect extends Vue {
 
   private inputBlurred(): void {
     this.showOptions = false;
-    if (this.exactMatch && this.autoSelectOnBlur) {
-      const selected = this.selectHighlighted();
-      // If nothing was selected, it means the search text does not match a
-      // valid option. So reset the search text to the old value.
-      if (!selected) this.searchText = this.getDisplayName(this.syncedValue);
+    if (this.exactMatch) {
+      if (this.autoSelectOnBlur) {
+        const selected = this.selectHighlighted();
+        // If nothing was selected, it means the search text does not match a
+        // valid option. So reset the search text to the old value.
+        if (!selected) this.searchText = this.getDisplayName(this.syncedValue);
+      }
+    } else {
+      // Emit the matching value. If there is no matching value, emit the
+      // search-text since exactMatch has not been set.
+      this.$emit("update:value", this.createOption(this.searchText));
     }
   }
 
@@ -161,17 +166,19 @@ function defaultGetDisplayName(option: Object | String): string {
   return option.toLocaleString();
 }
 
-function defaultFilterOptions(
-  searchText: string,
-  options: Array<Object | String>
-): Array<Object | String> {
+function defaultIsMatch(searchText: string, option: Object | String): boolean {
   const searchTextLowerCase = searchText.toLowerCase();
-  return options.filter((option: Object | String) =>
-    option
-      .toString()
-      .toLowerCase()
-      .includes(searchTextLowerCase)
-  );
+  return option
+    .toString()
+    .toLowerCase()
+    .includes(searchTextLowerCase);
+}
+
+function defaultIsExactMatch(
+  searchText: string,
+  option: Object | String
+): boolean {
+  return option.toString() === searchText;
 }
 
 function defaultCreateOption(input: string): Object | String {
