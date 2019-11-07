@@ -17,7 +17,7 @@
         v-for="(option, index) in matchingOptions"
         :key="getDisplayName(option)"
         @mousedown.prevent
-        @click="optionSelected(option)"
+        @click="selectOption(option)"
         class="tree-ware-select-option-row"
         :class="{'highlight': index === highlightIndex}"
       >
@@ -54,7 +54,6 @@ export type CreateOptionFunction = (input: string) => Object | String;
 
 @Component
 export default class TreeWareSelect extends Vue {
-  // TODO(deepaknulu): implement exactMatch = false functionality.
   @Prop({ default: false }) readonly exactMatch!: boolean;
 
   /** Auto-selects first option. Applicable only if exactMatch is true. */
@@ -83,6 +82,7 @@ export default class TreeWareSelect extends Vue {
   }
 
   mounted() {
+    this.resetHighlightIndex();
     this.searchText = this.getDisplayName(this.syncedValue);
   }
 
@@ -93,7 +93,7 @@ export default class TreeWareSelect extends Vue {
 
   private inputFocussed(): void {
     this.inputField.select();
-    this.highlightIndex = 0;
+    this.resetHighlightIndex();
     this.showOptions = true;
   }
 
@@ -108,8 +108,14 @@ export default class TreeWareSelect extends Vue {
       }
     } else {
       // Emit the matching value. If there is no matching value, emit the
-      // search-text since exactMatch has not been set.
-      this.$emit("update:value", this.createOption(this.searchText));
+      // search-text since `exactMatch` has not been set.
+      const exactMatchOption = this.options.find(option =>
+        this.isExactMatch(this.searchText, option)
+      );
+      const option = exactMatchOption
+        ? exactMatchOption
+        : this.createOption(this.searchText);
+      this.selectOption(option);
     }
   }
 
@@ -131,12 +137,20 @@ export default class TreeWareSelect extends Vue {
 
   private searchTextChanged(): void {
     this.showOptions = true;
-    this.highlightIndex = 0;
+    this.resetHighlightIndex();
   }
 
   private handleInputEnter(): void {
     if (!this.showOptions) this.showOptions = true;
-    else this.selectHighlighted();
+    else {
+      const selected = this.selectHighlighted();
+      if (!selected && !this.exactMatch) {
+        // Exact-match is not required and there is no highlighted option,
+        // so set the search-text as the new selected value.
+        const newOption = this.createOption(this.searchText);
+        this.selectOption(newOption);
+      }
+    }
   }
 
   /**
@@ -144,22 +158,27 @@ export default class TreeWareSelect extends Vue {
    * If there is no highlighted option, does nothing and returns false.
    */
   private selectHighlighted(): boolean {
+    if (this.highlightIndex < 0) return false;
     if (this.matchingOptions.length > this.highlightIndex) {
-      this.optionSelected(this.matchingOptions[this.highlightIndex]);
+      this.selectOption(this.matchingOptions[this.highlightIndex]);
       return true;
     }
     return false;
   }
 
-  private optionSelected(option: Object | String): void {
+  private selectOption(option: Object | String): void {
     this.searchText = this.getDisplayName(option);
     this.syncedValue = option;
     this.showOptions = false;
   }
 
+  private resetHighlightIndex(): void {
+    this.highlightIndex = this.exactMatch ? 0 : -1;
+  }
+
   private searchText = "";
   private showOptions = false;
-  private highlightIndex = 0;
+  private highlightIndex = -1;
 }
 
 function defaultGetDisplayName(option: Object | String): string {
@@ -192,7 +211,8 @@ $border-width: 1px;
 $background-color: white;
 $font-size: 14px;
 $line-height-multiplier: 1.8;
-$padding: 5px;
+$padding-x: 10px;
+$padding-y: 5px;
 $primary-color: gray;
 $secondary-color: lightgray;
 
@@ -209,7 +229,7 @@ $secondary-color: lightgray;
     box-sizing: border-box;
     font-size: $font-size;
     line-height: $line-height-multiplier;
-    padding: $padding;
+    padding: $padding-y $padding-x;
     width: 100%;
   }
 
@@ -223,6 +243,7 @@ $secondary-color: lightgray;
     display: none;
     line-height: $line-height-multiplier;
     max-height: 200px;
+    overflow: scroll;
     position: absolute;
     table-layout: fixed;
     width: 100%;
@@ -230,7 +251,7 @@ $secondary-color: lightgray;
 
     .tree-ware-select-option-row {
       td {
-        padding: $padding;
+        padding: $padding-y $padding-x;
       }
 
       .frequency-count {
@@ -240,6 +261,7 @@ $secondary-color: lightgray;
 
       .display-name {
         width: 100%;
+        word-break: break-all;
       }
 
       &.highlight {
