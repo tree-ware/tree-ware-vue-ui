@@ -59,7 +59,7 @@ export default class TreeWareSelect extends Vue {
   /** Auto-selects first option. Applicable only if exactMatch is true. */
   @Prop({ default: false }) readonly autoSelectOnBlur!: boolean;
 
-  @PropSync("value", { type: [Object, String] }) syncedValue!: Object | String;
+  @Prop({ type: [Object, String] }) readonly value!: Object | String;
   @Prop({ default: () => [] }) readonly options!: Array<Object | String>;
 
   @Prop({ default: defaultGetDisplayName })
@@ -79,6 +79,13 @@ export default class TreeWareSelect extends Vue {
   @Watch("syncedValue")
   private valueChanged(newValue: Object | String) {
     this.searchText = this.getDisplayName(newValue);
+  }
+
+  private get syncedValue(): Object | String {
+    return this.value;
+  }
+  private set syncedValue(newValue: Object | String) {
+    this.$emit("input", newValue);
   }
 
   mounted() {
