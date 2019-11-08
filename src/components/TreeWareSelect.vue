@@ -67,8 +67,8 @@ export default class TreeWareSelect extends Vue {
 
   @Prop() readonly getFrequencyCount?: GetFrequencyCountFunction;
 
-  @Prop({ default: defaultIsExactMatch }) readonly isExactMatch!: MatchFunction;
-  @Prop({ default: defaultIsMatch }) readonly isMatch!: MatchFunction;
+  @Prop() readonly isExactMatch?: MatchFunction;
+  @Prop() readonly isMatch?: MatchFunction;
 
   /** A function to create an option object from a user's input string */
   @Prop({ default: defaultCreateOption })
@@ -82,13 +82,20 @@ export default class TreeWareSelect extends Vue {
   }
 
   mounted() {
+    this.isExactMatchInternal = this.isExactMatch
+      ? this.isExactMatch
+      : this.defaultIsExactMatch;
+    this.isMatchInternal = this.isMatch ? this.isMatch : this.defaultIsMatch;
+
     this.resetHighlightIndex();
     this.searchText = this.getDisplayName(this.syncedValue);
   }
 
   private get matchingOptions(): Array<Object | String> {
     if (!this.searchText) return this.options;
-    return this.options.filter(option => this.isMatch(this.searchText, option));
+    return this.options.filter(option =>
+      this.isMatchInternal(this.searchText, option)
+    );
   }
 
   private inputFocussed(): void {
@@ -110,7 +117,7 @@ export default class TreeWareSelect extends Vue {
       // Emit the matching value. If there is no matching value, emit the
       // search-text since `exactMatch` has not been set.
       const exactMatchOption = this.options.find(option =>
-        this.isExactMatch(this.searchText, option)
+        this.isExactMatchInternal(this.searchText, option)
       );
       const option = exactMatchOption
         ? exactMatchOption
@@ -176,6 +183,23 @@ export default class TreeWareSelect extends Vue {
     this.highlightIndex = this.exactMatch ? 0 : -1;
   }
 
+  private defaultIsExactMatch(
+    searchText: string,
+    option: Object | String
+  ): boolean {
+    return this.getDisplayName(option) === searchText;
+  }
+
+  private defaultIsMatch(searchText: string, option: Object | String): boolean {
+    const searchTextLowerCase = searchText.toLowerCase();
+    return this.getDisplayName(option)
+      .toLowerCase()
+      .includes(searchTextLowerCase);
+  }
+
+  private isExactMatchInternal!: MatchFunction;
+  private isMatchInternal!: MatchFunction;
+
   private searchText = "";
   private showOptions = false;
   private highlightIndex = -1;
@@ -183,21 +207,6 @@ export default class TreeWareSelect extends Vue {
 
 function defaultGetDisplayName(option: Object | String): string {
   return option.toLocaleString();
-}
-
-function defaultIsMatch(searchText: string, option: Object | String): boolean {
-  const searchTextLowerCase = searchText.toLowerCase();
-  return option
-    .toString()
-    .toLowerCase()
-    .includes(searchTextLowerCase);
-}
-
-function defaultIsExactMatch(
-  searchText: string,
-  option: Object | String
-): boolean {
-  return option.toString() === searchText;
 }
 
 function defaultCreateOption(input: string): Object | String {
@@ -247,7 +256,7 @@ $secondary-color: lightgray;
     position: absolute;
     table-layout: fixed;
     width: 100%;
-    z-index: 2;
+    z-index: 200;
 
     .tree-ware-select-option-row {
       td {
