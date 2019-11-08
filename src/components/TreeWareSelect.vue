@@ -266,6 +266,7 @@ $secondary-color: lightgray;
       .frequency-count {
         text-align: right;
         border-right: 1px solid $primary-color;
+        word-break: keep-all;
       }
 
       .display-name {
