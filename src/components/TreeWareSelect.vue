@@ -11,6 +11,7 @@
       @keydown.down="highlightDown()"
       @keydown.up="highlightUp()"
       @keydown.enter="handleInputEnter()"
+      :disabled="disabled"
     />
     <table class="tree-ware-select-options">
       <tr
@@ -73,6 +74,8 @@ export default class TreeWareSelect extends Vue {
   /** A function to create an option object from a user's input string */
   @Prop({ default: defaultCreateOption })
   readonly createOption!: CreateOptionFunction;
+
+  @Prop({ default: false }) readonly disabled!: boolean;
 
   @Ref() readonly inputField!: HTMLInputElement;
 
@@ -247,6 +250,10 @@ $secondary-color: lightgray;
     line-height: $line-height-multiplier;
     padding: $padding-y $padding-x;
     width: 100%;
+
+    &:disabled {
+      background-color: rgba(white, 0.1);
+    }
   }
 
   .tree-ware-select-options {
