@@ -14,18 +14,38 @@ export default class TreeWareTabs extends Vue {}
 </script>
 
 <style lang="scss" scoped>
-$primary-color: lightgray;
-$secondary-color: gray;
+$active-tab-background-color: gray;
+$active-tab-text-color: white;
+$border-color: lightgray;
+$border-radius: 0.75rem;
+$border-width: 1px;
+$inactive-tab-background-color: white;
+$inactive-tab-text-color: gray;
+$tab-margin-x: 2px;
+$tab-padding-x: 2rem;
+$tab-padding-y: 0.75rem;
 
 .tree-ware-tabs {
+  border-bottom: solid $border-width $border-color;
+
   a {
-    color: $secondary-color;
-    padding: 1rem;
+    background-color: $inactive-tab-background-color;
+    border: solid $border-width $border-color;
+    border-bottom: none;
+    border-radius: $border-radius $border-radius 0 0;
+    color: $inactive-tab-text-color;
+    padding: $tab-padding-y $tab-padding-x;
+    margin: 0px $tab-margin-x;
+
+    &:hover {
+      background-color: lighten($active-tab-background-color, 10%);
+      color: $active-tab-text-color;
+    }
 
     &.router-link-active {
-      color: $primary-color;
+      background-color: $active-tab-background-color;
+      color: $active-tab-text-color;
       cursor: default;
-      border-bottom: solid 1px $primary-color;
     }
   }
 }
