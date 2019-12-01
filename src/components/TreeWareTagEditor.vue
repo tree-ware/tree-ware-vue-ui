@@ -29,22 +29,12 @@
 </template>
 
 <script lang="ts">
-import TreeWareSelect from "@/tree-ware-vue-ui/src/components/TreeWareSelect.vue";
+import TreeWareSelect from "./TreeWareSelect.vue";
+import { Tag, TagValueCounts, ValueCount } from "./TagValueCounts";
 
 import "reflect-metadata";
 import { Component, Prop, Vue, Watch } from "vue-property-decorator";
 import { extend } from "vee-validate";
-
-export interface Tag {
-  key: string;
-  value: string;
-}
-
-export interface ValueCount {
-  value: string;
-  count: number;
-}
-export type TagValueCounts = { [key: string]: ValueCount[] };
 
 extend("uniqueTag", {
   params: ["tags"],

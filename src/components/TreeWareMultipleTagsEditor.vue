@@ -23,14 +23,15 @@
 </template>
 
 <script lang="ts">
-import TreeWareTagEditor, {
+import "reflect-metadata";
+import { Component, Prop, Vue, Watch } from "vue-property-decorator";
+
+import {
   Tag,
   ValueCount,
   TagValueCounts
-} from "@/tree-ware-vue-ui/src/components/TreeWareTagEditor.vue";
-
-import "reflect-metadata";
-import { Component, Prop, Vue, Watch } from "vue-property-decorator";
+} from "@/tree-ware-vue-ui/src/components/TagValueCounts";
+import TreeWareTagEditor from "@/tree-ware-vue-ui/src/components/TreeWareTagEditor.vue";
 
 @Component({
   components: {
