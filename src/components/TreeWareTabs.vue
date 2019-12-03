@@ -26,12 +26,24 @@ $tab-padding-x: 2rem;
 $tab-padding-y: 0.75rem;
 
 .tree-ware-tabs {
-  border-bottom: solid $border-width $border-color;
+  position: relative;
+
+  // Inset bottom-border so that the active-tab's bottom-border can hide it.
+  &:before {
+    border-bottom: solid $border-width $border-color;
+    bottom: 0px;
+    color: transparent; // hide the content specified below
+    content: "invisible content"; // it won't work in Chrome without this
+    left: 0px;
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    z-index: -1;
+  }
 
   a {
     background-color: $inactive-tab-background-color;
     border: solid $border-width $border-color;
-    border-bottom: none;
     border-radius: $border-radius $border-radius 0 0;
     color: $inactive-tab-text-color;
     padding: $tab-padding-y $tab-padding-x;
@@ -44,6 +56,7 @@ $tab-padding-y: 0.75rem;
 
     &.router-link-active {
       background-color: $active-tab-background-color;
+      border-bottom: none;
       color: $active-tab-text-color;
       cursor: default;
     }
