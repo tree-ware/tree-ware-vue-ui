@@ -11,7 +11,7 @@
     </validation-provider>
     <validation-provider
       immediate
-      rules="nonEmptyValue"
+      :rules="getValueRules(syncedKey)"
       v-slot="{ errors, invalid }"
       class="value-selector flex-1"
     >
@@ -30,6 +30,7 @@
 
 <script lang="ts">
 import TreeWareSelect from "./TreeWareSelect.vue";
+import { TagValueConstraints } from "./TagValueConstraints";
 import { Tag, TagValueCounts, ValueCount } from "./TagValueCounts";
 
 import "reflect-metadata";
@@ -48,13 +49,6 @@ extend("uniqueTag", {
   message: "Value is not unique"
 });
 
-extend("nonEmptyValue", {
-  validate: (valueCount: ValueCount) => {
-    return Boolean(valueCount.value);
-  },
-  message: "Value is required"
-});
-
 @Component({
   components: {
     TreeWareSelect
@@ -66,6 +60,7 @@ export default class TreeWareTagEditor extends Vue {
 
   @Prop() readonly tags!: Tag[];
   @Prop() readonly tagValueCounts?: TagValueCounts;
+  @Prop() readonly tagValueConstraints?: TagValueConstraints;
 
   beforeMount() {
     this.initSyncedKey();
@@ -115,6 +110,18 @@ export default class TreeWareTagEditor extends Vue {
     return this.tagValueCounts
       ? this.tagValueCounts[this.syncedKeyInternal] || []
       : [];
+  }
+
+  private getValueRules(tagKey: string): string {
+    return this.tagValueConstraints
+      ? this.tagValueConstraints.rulesGetter(tagKey)
+      : "";
+  }
+
+  private getValueHintText(tagKey: string): string {
+    return this.tagValueConstraints
+      ? this.tagValueConstraints.hintGetter(tagKey)
+      : "";
   }
 
   private createValueCount(newValue: string): ValueCount {

@@ -10,7 +10,8 @@
           :tag-key.sync="tag.key"
           :value.sync="tag.value"
           :tags="tagsInternal"
-          :tagValueCounts="tagValueCounts"
+          :tag-value-counts="tagValueCounts"
+          :tag-value-constraints="tagValueConstraints"
           class="flex flex-1"
         />
         <a @click="deleteTag(index)" class="ml-4 mt-2">
@@ -26,12 +27,9 @@
 import "reflect-metadata";
 import { Component, Prop, Vue, Watch } from "vue-property-decorator";
 
-import {
-  Tag,
-  ValueCount,
-  TagValueCounts
-} from "@/tree-ware-vue-ui/src/components/TagValueCounts";
-import TreeWareTagEditor from "@/tree-ware-vue-ui/src/components/TreeWareTagEditor.vue";
+import { TagValueConstraints } from "./TagValueConstraints";
+import { Tag, ValueCount, TagValueCounts } from "./TagValueCounts";
+import TreeWareTagEditor from "./TreeWareTagEditor.vue";
 
 @Component({
   components: {
@@ -41,6 +39,7 @@ import TreeWareTagEditor from "@/tree-ware-vue-ui/src/components/TreeWareTagEdit
 export default class TreeWareMultipleTagsEditor extends Vue {
   @Prop() tags!: Tag[];
   @Prop() tagValueCounts?: TagValueCounts;
+  @Prop() readonly tagValueConstraints?: TagValueConstraints;
 
   beforeMount() {
     this.tagsInternal = [...this.tags];

@@ -1,10 +1,10 @@
 export interface Tag {
-    key: string;
-    value: string;
+    key: string
+    value: string
 }
 
 export interface ValueCount {
-    value: string;
-    count: number;
+    value: string
+    count: number
 }
-export type TagValueCounts = { [key: string]: ValueCount[] };
+export type TagValueCounts = { [tagKey: string]: ValueCount[] }
