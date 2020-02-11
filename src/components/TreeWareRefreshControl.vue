@@ -1,6 +1,6 @@
 <template>
   <div @click="refresh()" class="dropdown-button-container">
-    <vs-dropdown>
+    <vs-dropdown class="cursor-pointer">
       <vs-button :icon="getRefreshIcon()" size="large" />
       <vs-dropdown-menu>
         <vs-dropdown-item @click="periodSeconds = 0" class="whitespace-no-wrap text-base">
