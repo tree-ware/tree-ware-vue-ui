@@ -35,4 +35,5 @@ export interface ListControllerUiInterface<ValueFilters> {
 
     filterChanged(filter: ListFilter<ValueFilters>): void
     pageChanged(page: number): void
+    refresh(): void
 }
