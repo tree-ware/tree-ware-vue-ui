@@ -6,7 +6,8 @@
       v-slot="{ errors, invalid }"
       class="key-selector flex-1 pr-2"
     >
-      <tree-ware-select v-model="syncedKey" :options="keyOptions" class="flex-1 w-full"></tree-ware-select>
+      <tree-ware-label v-if="isRequired" v-model="syncedKey" class="required-tag" />
+      <tree-ware-select v-else v-model="syncedKey" :options="getKeyOptions" class="flex-1 w-full" />
       <span v-if="invalid" class="field-error">{{ errors[0] }}</span>
     </validation-provider>
     <validation-provider
@@ -29,6 +30,7 @@
 </template>
 
 <script lang="ts">
+import TreeWareLabel from "./TreeWareLabel.vue";
 import TreeWareSelect from "./TreeWareSelect.vue";
 import { TagValueConstraints } from "./TagValueConstraints";
 import { Tag, TagValueCounts, ValueCount } from "./TagValueCounts";
@@ -51,6 +53,7 @@ extend("uniqueTag", {
 
 @Component({
   components: {
+    TreeWareLabel,
     TreeWareSelect
   }
 })
@@ -59,8 +62,12 @@ export default class TreeWareTagEditor extends Vue {
   @Prop({ default: "" }) readonly value!: string;
 
   @Prop() readonly tags!: Tag[];
+  @Prop() readonly keyOptions?: string[];
   @Prop() readonly tagValueCounts?: TagValueCounts;
   @Prop() readonly tagValueConstraints?: TagValueConstraints;
+
+  /** Key is not editable if it is a required tag */
+  @Prop({ default: false }) readonly isRequired!: boolean;
 
   beforeMount() {
     this.initSyncedKey();
@@ -102,7 +109,8 @@ export default class TreeWareTagEditor extends Vue {
       valueCounts.length === 0 ? this.createValueCount("") : valueCounts[0];
   }
 
-  private get keyOptions(): string[] {
+  private get getKeyOptions(): string[] {
+    if (this.keyOptions) return this.keyOptions;
     return this.tagValueCounts ? Object.keys(this.tagValueCounts) : [];
   }
 
@@ -132,3 +140,11 @@ export default class TreeWareTagEditor extends Vue {
   private valueCountInternal!: ValueCount;
 }
 </script>
+
+<style lang="scss" scoped>
+.required-tag {
+  display: block;
+  line-height: 2.5rem;
+  padding-left: 0.75rem;
+}
+</style>

@@ -10,11 +10,13 @@
           :tag-key.sync="tag.key"
           :value.sync="tag.value"
           :tags="tagsInternal"
+          :key-options="keyOptions"
           :tag-value-counts="tagValueCounts"
           :tag-value-constraints="tagValueConstraints"
+          :is-required="isRequiredTag(tag)"
           class="flex flex-1"
         />
-        <a @click="deleteTag(index)" class="ml-4 mt-2">
+        <a :class="{'invisible': isRequiredTag(tag)}" @click="deleteTag(index)" class="ml-4 mt-2">
           <vs-icon icon="fa-trash-alt" icon-pack="fas" color="warning" />
         </a>
       </div>
@@ -40,9 +42,11 @@ export default class TreeWareMultipleTagsEditor extends Vue {
   @Prop() tags!: Tag[];
   @Prop() tagValueCounts?: TagValueCounts;
   @Prop() readonly tagValueConstraints?: TagValueConstraints;
+  @Prop({ default: () => [] }) readonly requiredTags!: string[];
 
   beforeMount() {
     this.tagsInternal = [...this.tags];
+    this.keyOptions = this.getKeyOptions();
   }
 
   @Watch("tags")
@@ -54,6 +58,19 @@ export default class TreeWareMultipleTagsEditor extends Vue {
     return this.tagsInternal;
   }
 
+  private isRequiredTag(tag: Tag): boolean {
+    return this.requiredTags.indexOf(tag.key) >= 0;
+  }
+
+  private getKeyOptions(): string[] | null {
+    if (this.requiredTags.length == 0) return null;
+    if (!this.tagValueCounts) return null;
+    // Return keys from tagValueCounts that are not in requiredTags
+    return Object.keys(this.tagValueCounts).filter(
+      key => this.requiredTags.indexOf(key) < 0
+    );
+  }
+
   private addTag(): void {
     this.tagsInternal.push({ key: "", value: "" });
   }
@@ -63,5 +80,6 @@ export default class TreeWareMultipleTagsEditor extends Vue {
   }
 
   private tagsInternal: Tag[] = [];
+  private keyOptions: string[] | null = null;
 }
 </script>
