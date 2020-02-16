@@ -14,14 +14,20 @@
           :tag-value-counts="tagValueCounts"
           :tag-value-constraints="tagValueConstraints"
           :is-required="isRequiredTag(tag)"
+          :disabled="disabled"
           class="flex flex-1"
         />
-        <a :class="{'invisible': isRequiredTag(tag)}" @click="deleteTag(index)" class="ml-4 mt-2">
+        <a
+          :class="{'invisible': isRequiredTag(tag)}"
+          @click="deleteTag(index)"
+          :disabled="disabled"
+          class="ml-4 mt-2"
+        >
           <vs-icon icon="fa-trash-alt" icon-pack="fas" color="warning" />
         </a>
       </div>
     </div>
-    <vs-button @click="addTag()" icon="fa-plus" icon-pack="fas" class="mt-4"></vs-button>
+    <vs-button @click="addTag()" icon="fa-plus" icon-pack="fas" :disabled="disabled" class="mt-4"></vs-button>
   </div>
 </template>
 
@@ -43,6 +49,8 @@ export default class TreeWareMultipleTagsEditor extends Vue {
   @Prop() tagValueCounts?: TagValueCounts;
   @Prop() readonly tagValueConstraints?: TagValueConstraints;
   @Prop({ default: () => [] }) readonly requiredTags!: string[];
+
+  @Prop({ default: false }) readonly disabled!: boolean;
 
   beforeMount() {
     this.tagsInternal = [...this.tags];

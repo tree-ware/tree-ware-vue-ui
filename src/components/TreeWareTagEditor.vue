@@ -7,7 +7,13 @@
       class="key-selector flex-1 pr-2"
     >
       <tree-ware-label v-if="isRequired" v-model="syncedKey" class="required-tag" />
-      <tree-ware-select v-else v-model="syncedKey" :options="getKeyOptions" class="flex-1 w-full" />
+      <tree-ware-select
+        v-else
+        v-model="syncedKey"
+        :options="getKeyOptions"
+        :disabled="disabled"
+        class="flex-1 w-full"
+      />
       <span v-if="invalid" class="field-error">{{ errors[0] }}</span>
     </validation-provider>
     <validation-provider
@@ -22,6 +28,7 @@
         :get-display-name="(option) => option.value"
         :get-frequency-count="(option) => option.count"
         :create-option="createValueCount"
+        :disabled="disabled"
         class="w-full"
       ></tree-ware-select>
       <span v-if="invalid" class="field-error">{{ errors[0] }}</span>
@@ -68,6 +75,8 @@ export default class TreeWareTagEditor extends Vue {
 
   /** Key is not editable if it is a required tag */
   @Prop({ default: false }) readonly isRequired!: boolean;
+
+  @Prop({ default: false }) readonly disabled!: boolean;
 
   beforeMount() {
     this.initSyncedKey();
