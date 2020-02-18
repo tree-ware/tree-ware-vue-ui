@@ -11,8 +11,8 @@ export interface ListFilter<ValueFilters> {
     valueFilters: ValueFilters
 }
 
-export interface ListData<Item, Token> {
-    items: Observable<Item>
+export interface ListData<Data, Token> {
+    items: Observable<Data>
 
     /** 
      * Token for fetching the next page of the list.
@@ -23,8 +23,15 @@ export interface ListData<Item, Token> {
     nextPageToken: Token | undefined
 }
 
-export type ListFetchFunction<ValueFilters, Item, Token> =
-    (filter: ListFilter<ValueFilters>, pageToken: Token | undefined) => ListData<Item, Token>
+export type ListFetchFunction<ValueFilters, Data, Token> =
+    (filter: ListFilter<ValueFilters>, pageToken: Token | undefined) => ListData<Data, Token>
+
+export type UiStateFactory<UiState> = () => UiState
+
+export interface ListItem<Data, UiState> {
+    data: Data
+    uiState?: UiState
+}
 
 export interface ListControllerUiInterface<ValueFilters> {
     filter: ListFilter<ValueFilters>

@@ -1,12 +1,15 @@
 import { Subject } from 'rxjs'
 import { takeUntil } from 'rxjs/operators'
 
-import { ListControllerUiInterface, ListFetchFunction, ListFilter } from './ListControllerTypes'
+import {
+    ListControllerUiInterface, ListFetchFunction, ListFilter, ListItem, UiStateFactory
+} from './ListControllerTypes'
 
-export class ListController<ValueFilters, Item, Token> implements ListControllerUiInterface<ValueFilters> {
+export class ListController<ValueFilters, Data, Token, UiState = undefined> implements ListControllerUiInterface<ValueFilters> {
     constructor(
         private filterInternal: ListFilter<ValueFilters>,
-        private readonly fetchFunction: ListFetchFunction<ValueFilters, Item, Token>
+        private readonly fetchFunction: ListFetchFunction<ValueFilters, Data, Token>,
+        private readonly uiStateFactory: UiStateFactory<UiState> | undefined = undefined
     ) {
         this.resetToFirstPage()
     }
@@ -38,7 +41,7 @@ export class ListController<ValueFilters, Item, Token> implements ListController
         this.errorInternal = value
     }
 
-    get items(): Item[] {
+    get items(): ListItem<Data, UiState>[] {
         return this.itemsInternal
     }
 
@@ -72,8 +75,11 @@ export class ListController<ValueFilters, Item, Token> implements ListController
         listData.items.pipe(
             takeUntil(this.destroyed)
         ).subscribe({
-            next: (item: Item) => {
-                this.itemsInternal.push(item)
+            next: (data: Data) => {
+                this.itemsInternal.push({
+                    data,
+                    uiState: this.uiStateFactory ? this.uiStateFactory() : undefined
+                })
             },
             error: (error: any) => {
                 this.isLoadingInternal = false
@@ -135,7 +141,7 @@ export class ListController<ValueFilters, Item, Token> implements ListController
         }
     }
 
-    private itemsInternal: Item[] = []
+    private itemsInternal: ListItem<Data, UiState>[] = []
 
     private pageInternal!: number
     private nextPageTokens!: Array<Token | undefined>
