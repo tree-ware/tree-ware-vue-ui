@@ -1,15 +1,16 @@
-import { Subject } from 'rxjs'
-import { takeUntil } from 'rxjs/operators'
-
 import {
     ListControllerUiInterface, ListFetchFunction, ListFilter, ListItem, UiStateFactory
 } from './ListControllerTypes'
+
+import { Subject } from 'rxjs'
+import { takeUntil } from 'rxjs/operators'
 
 export class ListController<ValueFilters, Data, Token, UiState = undefined> implements ListControllerUiInterface<ValueFilters> {
     constructor(
         private filterInternal: ListFilter<ValueFilters>,
         private readonly fetchFunction: ListFetchFunction<ValueFilters, Data, Token>,
-        private readonly uiStateFactory: UiStateFactory<UiState> | undefined = undefined
+        private readonly uiStateFactory: UiStateFactory<UiState> | undefined = undefined,
+        private readonly isLoadingCallback?: (loading: boolean) => void
     ) {
         this.resetToFirstPage()
     }
@@ -32,6 +33,11 @@ export class ListController<ValueFilters, Data, Token, UiState = undefined> impl
 
     get isLoading(): boolean {
         return this.isLoadingInternal
+    }
+
+    set isLoading(loading: boolean) {
+        this.isLoadingInternal = loading
+        if (this.isLoadingCallback) this.isLoadingCallback(loading)
     }
 
     get error(): string {
@@ -65,7 +71,7 @@ export class ListController<ValueFilters, Data, Token, UiState = undefined> impl
     }
 
     private fetchList(): void {
-        this.isLoadingInternal = true
+        this.isLoading = true
         this.errorInternal = ''
         this.itemsInternal = []
 
@@ -82,11 +88,11 @@ export class ListController<ValueFilters, Data, Token, UiState = undefined> impl
                 })
             },
             error: (error: any) => {
-                this.isLoadingInternal = false
+                this.isLoading = false
                 this.errorInternal = String(error)
             },
             complete: () => {
-                this.isLoadingInternal = false
+                this.isLoading = false
                 this.updateNextPageToken(listData.nextPageToken)
             }
         })
