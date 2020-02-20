@@ -26,11 +26,15 @@ export interface ListData<Data, Token> {
 export type ListFetchFunction<ValueFilters, Data, Token> =
     (filter: ListFilter<ValueFilters>, pageToken: Token | undefined) => ListData<Data, Token>
 
+export interface UiSelectionState {
+    selected: boolean
+}
+
 export type UiStateFactory<UiState> = () => UiState
 
 export interface ListItem<Data, UiState> {
     data: Data
-    uiState?: UiState
+    uiState: UiState
 }
 
 export interface ListControllerUiInterface<ValueFilters> {

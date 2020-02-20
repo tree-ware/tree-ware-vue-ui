@@ -1,21 +1,43 @@
 import {
-    ListControllerUiInterface, ListFetchFunction, ListFilter, ListItem, UiStateFactory
+    ListControllerUiInterface,
+    ListFetchFunction,
+    ListFilter,
+    ListItem,
+    UiSelectionState,
+    UiStateFactory
 } from './ListControllerTypes'
 
 import { Subject } from 'rxjs'
 import { takeUntil } from 'rxjs/operators'
 
-export class ListController<ValueFilters, Data, Token, UiState = undefined> implements ListControllerUiInterface<ValueFilters> {
+export function uiSelectionStateFactory(): UiSelectionState {
+    return {
+        selected: false,
+    }
+}
+export class ListController<ValueFilters, Data, Token, UiState extends UiSelectionState>
+    implements ListControllerUiInterface<ValueFilters>
+{
     constructor(
         private filterInternal: ListFilter<ValueFilters>,
         private readonly fetchFunction: ListFetchFunction<ValueFilters, Data, Token>,
-        private readonly uiStateFactory: UiStateFactory<UiState> | undefined = undefined,
-        private readonly isLoadingCallback?: (loading: boolean) => void
+        private readonly uiStateFactory: UiStateFactory<UiState>
     ) {
         this.resetToFirstPage()
     }
 
+    setIsLoadingCallback(callback: (loading: boolean) => void): this {
+        this.isLoadingCallback = callback
+        return this
+    }
+
+    setIsAllSelectedCallback(callback: (allSelected: boolean | undefined) => void): this {
+        this.isAllSelectedCallback = callback
+        return this
+    }
+
     destroy(): void {
+        this.destroyed.next()
         this.destroyed.complete()
     }
 
@@ -34,8 +56,7 @@ export class ListController<ValueFilters, Data, Token, UiState = undefined> impl
     get isLoading(): boolean {
         return this.isLoadingInternal
     }
-
-    set isLoading(loading: boolean) {
+    private setIsLoading(loading: boolean): void {
         this.isLoadingInternal = loading
         if (this.isLoadingCallback) this.isLoadingCallback(loading)
     }
@@ -47,8 +68,56 @@ export class ListController<ValueFilters, Data, Token, UiState = undefined> impl
         this.errorInternal = value
     }
 
+    get selectionCount(): number {
+        return this.selectionCountInternal
+    }
+    private setSelectionCount(count: number): void {
+        this.selectionCountInternal = count
+    }
+    private changeSelectionCount(delta: number): void {
+        this.selectionCountInternal += delta
+    }
+
+    /**
+     * Indicates if all, none, or some items are selected.
+     * Returns true if all items are selected,
+     *         false if none of the items are selected,
+     *         undefined if some are selected and others are not
+     */
+    get isAllSelected(): boolean | undefined {
+        return this.isAllSelectedInternal
+    }
+    private setIsAllSelected(allSelected: boolean | undefined): void {
+        this.isAllSelectedInternal = allSelected
+        if (this.isAllSelectedCallback) this.isAllSelectedCallback(allSelected)
+    }
+
+    toggleAllSelected(): void {
+        const allSelected = !this.isAllSelectedInternal
+        this.itemsInternal.forEach(item => {
+            item.uiState.selected = allSelected
+        })
+        this.setSelectionCount(allSelected ? this.itemsInternal.length : 0)
+        this.setIsAllSelected(allSelected)
+    }
+
+    toggleSelected(uiState: UiState): void {
+        uiState.selected = !uiState.selected
+        this.changeSelectionCount(uiState.selected ? +1 : -1)
+        this.setIsAllSelected(
+            this.selectionCount === 0 ?
+                false :
+                this.selectionCount === this.itemsInternal.length ?
+                    true :
+                    undefined)
+    }
+
     get items(): ListItem<Data, UiState>[] {
         return this.itemsInternal
+    }
+
+    get selectedItems(): ListItem<Data, UiState>[] {
+        return this.itemsInternal.filter(item => item.uiState.selected)
     }
 
     filterChanged(filter: ListFilter<ValueFilters>): void {
@@ -71,8 +140,10 @@ export class ListController<ValueFilters, Data, Token, UiState = undefined> impl
     }
 
     private fetchList(): void {
-        this.isLoading = true
+        this.setIsLoading(true)
         this.errorInternal = ''
+        this.setSelectionCount(0)
+        this.setIsAllSelected(false)
         this.itemsInternal = []
 
         const currentPageToken = this.nextPageTokens[this.pageInternal]
@@ -84,15 +155,15 @@ export class ListController<ValueFilters, Data, Token, UiState = undefined> impl
             next: (data: Data) => {
                 this.itemsInternal.push({
                     data,
-                    uiState: this.uiStateFactory ? this.uiStateFactory() : undefined
+                    uiState: this.uiStateFactory()
                 })
             },
             error: (error: any) => {
-                this.isLoading = false
+                this.setIsLoading(false)
                 this.errorInternal = String(error)
             },
             complete: () => {
-                this.isLoading = false
+                this.setIsLoading(false)
                 this.updateNextPageToken(listData.nextPageToken)
             }
         })
@@ -154,6 +225,12 @@ export class ListController<ValueFilters, Data, Token, UiState = undefined> impl
 
     private isLoadingInternal = false
     private errorInternal = ''
+
+    private selectionCountInternal = 0
+    private isAllSelectedInternal: boolean | undefined = undefined
+
+    private isLoadingCallback?: (loading: boolean) => void = undefined
+    private isAllSelectedCallback?: (allSelected: boolean | undefined) => void = undefined
 
     private destroyed = new Subject()
 }
