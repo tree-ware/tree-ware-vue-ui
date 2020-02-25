@@ -76,7 +76,7 @@ export default class TreeWareTimeRangeSelector extends Vue {
   @Prop({ default: false }) disabled!: boolean;
 
   get startTime(): Date {
-    return this.syncedValue.startTime;
+    return this.syncedValue?.startTime ?? new Date();
   }
 
   set startTime(time: Date) {
