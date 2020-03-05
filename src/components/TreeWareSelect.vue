@@ -102,7 +102,7 @@ export default class TreeWareSelect extends Vue {
   }
 
   private get matchingOptions(): Array<Object | String> {
-    if (!this.searchText) return this.options;
+    if (!this.editing || !this.searchText) return this.options;
     return this.options.filter(option =>
       this.isMatchInternal(this.searchText, option)
     );
@@ -115,6 +115,7 @@ export default class TreeWareSelect extends Vue {
   }
 
   private inputBlurred(): void {
+    this.editing = false;
     this.showOptions = false;
     if (this.exactMatch) {
       if (this.autoSelectOnBlur) {
@@ -153,6 +154,7 @@ export default class TreeWareSelect extends Vue {
   }
 
   private searchTextChanged(): void {
+    this.editing = true;
     this.showOptions = true;
     this.resetHighlightIndex();
   }
@@ -211,6 +213,7 @@ export default class TreeWareSelect extends Vue {
   private isMatchInternal!: MatchFunction;
 
   private searchText = "";
+  private editing = false;
   private showOptions = false;
   private highlightIndex = -1;
 }
