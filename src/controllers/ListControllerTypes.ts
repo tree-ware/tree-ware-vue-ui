@@ -39,12 +39,14 @@ export interface ListItem<Data, UiState> {
 
 export interface ListControllerUiInterface<ValueFilters> {
     filter: ListFilter<ValueFilters>
+    pageSize: number
     page: number
     maxPage: number
     isLoading: boolean
     error: string
 
     filterChanged(filter: ListFilter<ValueFilters>): void
+    pageSizeChanged(pageSize: number): void
     pageChanged(page: number): void
     refresh(): void
 }

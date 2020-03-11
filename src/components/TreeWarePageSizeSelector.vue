@@ -1,13 +1,13 @@
 <template>
   <div class="flex flex-row">
-    <span class="self-center">{{ config.pageSizeLabel }}:</span>
+    <span class="self-center">{{ config.preLabel }}</span>
     <vs-select
       :options="pageSizeOptions"
       v-model="syncedValue"
       width="70px"
       style="min-width: 70px;"
       :disabled="this.disabled"
-      class="self-center ml-4"
+      class="self-center mx-2"
     >
       <vs-select-item
         v-for="option in pageSizeOptions"
@@ -16,6 +16,7 @@
         :text="option"
       />
     </vs-select>
+    <span class="self-center">{{ config.postLabel }}</span>
   </div>
 </template>
 
@@ -26,13 +27,15 @@ import { Component, Prop, PropSync, Vue } from "vue-property-decorator";
 export const PAGE_SIZE_OPTIONS = [10, 25, 50, 100, 200];
 
 export interface PageSizeSelectorConfig {
-  pageSizeLabel: string;
+  preLabel: string;
+  postLabel: string;
 }
 
 @Component
 export default class TreeWarePageSizeSelector extends Vue {
   static readonly defaultConfig: PageSizeSelectorConfig = {
-    pageSizeLabel: "Rows per page"
+    preLabel: "Show",
+    postLabel: "rows per page"
   };
 
   @Prop({ default: () => TreeWarePageSizeSelector.defaultConfig })

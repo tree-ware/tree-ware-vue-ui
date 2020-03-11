@@ -45,6 +45,10 @@ export class ListController<ValueFilters, Data, Token, UiState extends UiSelecti
         return this.filterInternal
     }
 
+    get pageSize(): number {
+        return this.filterInternal.pageSize
+    }
+
     get page(): number {
         return this.pageInternal
     }
@@ -122,6 +126,12 @@ export class ListController<ValueFilters, Data, Token, UiState extends UiSelecti
 
     filterChanged(filter: ListFilter<ValueFilters>): void {
         this.filterInternal = filter
+        this.resetToFirstPage()
+        this.fetchList()
+    }
+
+    pageSizeChanged(pageSize: number): void {
+        this.filterInternal.pageSize = pageSize
         this.resetToFirstPage()
         this.fetchList()
     }
