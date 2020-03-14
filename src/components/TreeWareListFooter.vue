@@ -67,6 +67,7 @@ export default class TreeWareListFooter<ValueFilters> extends Vue {
   private pageSizeChange(pageSize: number) {
     if (this.listController.pageSize !== pageSize) {
       this.listController.pageSizeChanged(pageSize);
+      this.$emit("update:pageSize", pageSize);
     }
   }
 
