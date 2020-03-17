@@ -7,7 +7,7 @@ import {
     UiStateFactory
 } from './ListControllerTypes'
 
-import { Subject } from 'rxjs'
+import { BehaviorSubject, Observable, Subject } from 'rxjs'
 import { takeUntil } from 'rxjs/operators'
 
 export function uiSelectionStateFactory(): UiSelectionState {
@@ -72,14 +72,15 @@ export class ListController<ValueFilters, Data, Token, UiState extends UiSelecti
         this.errorInternal = value
     }
 
-    get selectionCount(): number {
-        return this.selectionCountInternal
+    get selectionCount(): Observable<number> {
+        return this.selectionCount$
     }
     private setSelectionCount(count: number): void {
-        this.selectionCountInternal = count
+        this.selectionCount$.next(count)
     }
     private changeSelectionCount(delta: number): void {
-        this.selectionCountInternal += delta
+        const current = this.selectionCount$.getValue()
+        this.selectionCount$.next(current + delta)
     }
 
     /**
@@ -108,10 +109,11 @@ export class ListController<ValueFilters, Data, Token, UiState extends UiSelecti
     toggleSelected(uiState: UiState): void {
         uiState.selected = !uiState.selected
         this.changeSelectionCount(uiState.selected ? +1 : -1)
+        const currentSelectionCount = this.selectionCount$.getValue()
         this.setIsAllSelected(
-            this.selectionCount === 0 ?
+            currentSelectionCount === 0 ?
                 false :
-                this.selectionCount === this.itemsInternal.length ?
+                currentSelectionCount === this.itemsInternal.length ?
                     true :
                     undefined)
     }
@@ -236,7 +238,7 @@ export class ListController<ValueFilters, Data, Token, UiState extends UiSelecti
     private isLoadingInternal = false
     private errorInternal = ''
 
-    private selectionCountInternal = 0
+    private selectionCount$ = new BehaviorSubject(0)
     private isAllSelectedInternal: boolean | undefined = undefined
 
     private isLoadingCallback?: (loading: boolean) => void = undefined
