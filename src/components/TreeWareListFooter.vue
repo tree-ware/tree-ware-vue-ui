@@ -26,7 +26,7 @@
 import "reflect-metadata";
 import { Component, Prop, Vue } from "vue-property-decorator";
 
-import { ListControllerUiInterface } from "../controllers/ListControllerTypes";
+import { ListControllerUiInterface } from "../controllers/ListControllerInterfaces";
 import TreeWarePageSizeSelector, {
   PageSizeSelectorConfig
 } from "./TreeWarePageSizeSelector.vue";

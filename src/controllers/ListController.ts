@@ -5,7 +5,7 @@ import {
     ListItem,
     UiSelectionState,
     UiStateFactory
-} from './ListControllerTypes'
+} from './ListControllerInterfaces'
 
 import { BehaviorSubject, Observable, Subject } from 'rxjs'
 import { takeUntil } from 'rxjs/operators'

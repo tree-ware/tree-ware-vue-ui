@@ -53,7 +53,7 @@ import "flatpickr/dist/flatpickr.css";
 
 import dayjs from "dayjs";
 
-import { TimeRange } from "../controllers/ListControllerTypes";
+import { TimeRange } from "../controllers/ListControllerInterfaces";
 
 export interface TimeRangeSelectorConfig {}
 
