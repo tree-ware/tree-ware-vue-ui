@@ -1,14 +1,22 @@
 import {
     ListControllerUiInterface,
+    ListData,
     ListFetchFunction,
     ListFilter,
     ListItem,
     UiSelectionState,
-    UiStateFactory
+    UiStateFactory,
 } from './ListControllerInterfaces'
 
-import { BehaviorSubject, Observable, Subject } from 'rxjs'
+import { BehaviorSubject, empty, Observable, Subject } from 'rxjs'
 import { takeUntil } from 'rxjs/operators'
+
+export function emptyListData<Data, Token>(): ListData<Data, Token> {
+    return {
+        items: empty(),
+        nextPageToken: undefined
+    };
+}
 
 export function uiSelectionStateFactory(): UiSelectionState {
     return {
