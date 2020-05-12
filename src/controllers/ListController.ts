@@ -3,6 +3,7 @@ import {
     ListFetchFunction,
     ListFilter,
     ListItem,
+    NestedList,
     UiSelectionState,
     UiStateFactory,
 } from './ListControllerInterfaces'
@@ -10,13 +11,15 @@ import {
 import { BehaviorSubject, Observable, Subject } from 'rxjs'
 import { takeUntil } from 'rxjs/operators'
 
-export class ListController<ValueFilters, Data, Token, UiState extends UiSelectionState>
+export class ListController<ValueFilters, Data extends object, Token, UiState extends UiSelectionState>
     implements ListControllerUiInterface<ValueFilters>
 {
     constructor(
         private filterInternal: ListFilter<ValueFilters>,
         private readonly fetchFunction: ListFetchFunction<ValueFilters, Data, Token>,
-        private readonly uiStateFactory: UiStateFactory<UiState>
+        private readonly uiStateFactory: UiStateFactory<Data, UiState>,
+        private readonly dataIsNested: boolean = false,
+        private readonly selectNestedIfHidden: boolean = false
     ) {
         this.resetToFirstPage()
     }
@@ -77,6 +80,12 @@ export class ListController<ValueFilters, Data, Token, UiState extends UiSelecti
         const current = this.selectionCount$.getValue()
         this.selectionCount$.next(current + delta)
     }
+    private recomputeSelectionCount(): void {
+        let count = this.itemsInternal
+            .filter(item => (this.selectNestedIfHidden || item.uiState.visible) && item.uiState.selected)
+            .length
+        this.setSelectionCount(count)
+    }
 
     /**
      * Indicates if all, none, or some items are selected.
@@ -91,34 +100,60 @@ export class ListController<ValueFilters, Data, Token, UiState extends UiSelecti
         this.isAllSelectedInternal = allSelected
         if (this.isAllSelectedCallback) this.isAllSelectedCallback(allSelected)
     }
+    private recomputeIsAllSelected(): void {
+        const currentSelectionCount = this.selectionCount$.getValue()
+        const totalLength = this.selectNestedIfHidden
+            ? this.itemsInternal.length
+            : this.itemsInternal.filter(item => item.uiState.visible).length
+        this.setIsAllSelected(currentSelectionCount === 0
+            ? false
+            : currentSelectionCount === totalLength ? true : undefined
+        )
+    }
 
     toggleAllSelected(): void {
         const allSelected = !this.isAllSelectedInternal
+        let selectionCount = 0
         this.itemsInternal.forEach(item => {
-            item.uiState.selected = allSelected
+            if (this.selectNestedIfHidden || item.uiState.visible) {
+                item.uiState.selected = allSelected
+                ++selectionCount
+            }
         })
-        this.setSelectionCount(allSelected ? this.itemsInternal.length : 0)
+        this.setSelectionCount(allSelected ? selectionCount : 0)
         this.setIsAllSelected(allSelected)
     }
 
     toggleSelected(uiState: UiState): void {
         uiState.selected = !uiState.selected
         this.changeSelectionCount(uiState.selected ? +1 : -1)
-        const currentSelectionCount = this.selectionCount$.getValue()
-        this.setIsAllSelected(
-            currentSelectionCount === 0 ?
-                false :
-                currentSelectionCount === this.itemsInternal.length ?
-                    true :
-                    undefined)
+        this.recomputeIsAllSelected()
+    }
+
+    toggleNested(uiState: UiState): void {
+        uiState.nestedVisible = !uiState.nestedVisible
+        // Toggle visibility of nested items
+        uiState.nestedList.forEach(nested => {
+            nested.visible = !nested.visible
+        })
+        this.recomputeSelectionCount()
+        this.recomputeIsAllSelected()
     }
 
     get items(): ListItem<Data, UiState>[] {
         return this.itemsInternal
     }
 
+    get visibleItems(): ListItem<Data, UiState>[] {
+        return this.itemsInternal.filter(item => item.uiState.visible)
+    }
+
     get selectedItems(): ListItem<Data, UiState>[] {
         return this.itemsInternal.filter(item => item.uiState.selected)
+    }
+
+    get visibleSelectedItems(): ListItem<Data, UiState>[] {
+        return this.itemsInternal.filter(item => item.uiState.visible && item.uiState.selected)
     }
 
     filterChanged(filter: ListFilter<ValueFilters>): void {
@@ -156,13 +191,24 @@ export class ListController<ValueFilters, Data, Token, UiState extends UiSelecti
         const currentPageToken = this.nextPageTokens[this.pageInternal]
         const listData = this.fetchFunction(this.filterInternal, currentPageToken)
 
+        let index = 0
         listData.items.pipe(
             takeUntil(this.destroyed)
         ).subscribe({
             next: (data: Data) => {
-                this.itemsInternal.push({
-                    data,
-                    uiState: this.uiStateFactory()
+                const uiState = this.uiStateFactory(index++, data)
+                this.itemsInternal.push({ data, uiState })
+                if (!this.dataIsNested) return
+
+                const nestedList = (data as NestedList<Data>).nestedList
+                if (nestedList.length == 0) return
+
+                nestedList.forEach(nested => {
+                    const nestedUiState = this.uiStateFactory(index++, nested)
+                    nestedUiState.nestingLevel = 1
+                    nestedUiState.visible = false
+                    uiState.nestedList.push(nestedUiState)
+                    this.itemsInternal.push({ data: nested, uiState: nestedUiState })
                 })
             },
             error: (error: any) => {

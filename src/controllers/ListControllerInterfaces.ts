@@ -11,6 +11,10 @@ export interface ListFilter<ValueFilters> {
     valueFilters: ValueFilters
 }
 
+export interface NestedList<Data> {
+    nestedList: Data[]
+}
+
 export interface ListData<Data, Token> {
     items: Observable<Data>
 
@@ -27,10 +31,15 @@ export type ListFetchFunction<ValueFilters, Data, Token> =
     (filter: ListFilter<ValueFilters>, pageToken: Token | undefined) => ListData<Data, Token>
 
 export interface UiSelectionState {
+    index: number
     selected: boolean
+    visible: boolean
+    nestingLevel: number
+    nestedList: UiSelectionState[]
+    nestedVisible: boolean
 }
 
-export type UiStateFactory<UiState> = () => UiState
+export type UiStateFactory<Data, UiState> = (index: number, data: Data) => UiState
 
 export interface ListItem<Data, UiState> {
     data: Data

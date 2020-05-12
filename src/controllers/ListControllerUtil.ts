@@ -24,8 +24,13 @@ export function emptyListData<Data, Token>(): ListData<Data, Token> {
     };
 }
 
-export function uiSelectionStateFactory(): UiSelectionState {
+export function uiSelectionStateFactory(index: number): UiSelectionState {
     return {
+        index,
         selected: false,
+        visible: true,
+        nestingLevel: 0,
+        nestedList: [],
+        nestedVisible: false
     }
 }
