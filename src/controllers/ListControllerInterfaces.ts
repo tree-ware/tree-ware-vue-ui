@@ -46,6 +46,8 @@ export interface ListItem<Data, UiState> {
     uiState: UiState
 }
 
+export type ClientSideFilterFunction<Data, UiState> = (item: ListItem<Data, UiState>) => boolean
+
 export interface ListControllerUiInterface<ValueFilters> {
     filter: ListFilter<ValueFilters>
     pageSize: number

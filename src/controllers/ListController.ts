@@ -1,4 +1,5 @@
 import {
+    ClientSideFilterFunction,
     ListControllerUiInterface,
     ListFetchFunction,
     ListFilter,
@@ -19,7 +20,8 @@ export class ListController<ValueFilters, Data extends object, Token, UiState ex
         private readonly fetchFunction: ListFetchFunction<ValueFilters, Data, Token>,
         private readonly uiStateFactory: UiStateFactory<Data, UiState>,
         private readonly dataIsNested: boolean = false,
-        private readonly selectNestedIfHidden: boolean = false
+        private readonly selectNestedIfHidden: boolean = false,
+        private readonly clientSideFilter?: ClientSideFilterFunction<Data, UiState>
     ) {
         this.resetToFirstPage()
     }
@@ -145,7 +147,9 @@ export class ListController<ValueFilters, Data extends object, Token, UiState ex
     }
 
     get visibleItems(): ListItem<Data, UiState>[] {
-        return this.itemsInternal.filter(item => item.uiState.visible)
+        return this.itemsInternal.filter(item =>
+            item.uiState.visible && (this.clientSideFilter ? this.clientSideFilter(item) : true)
+        )
     }
 
     get selectedItems(): ListItem<Data, UiState>[] {

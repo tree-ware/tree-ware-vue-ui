@@ -10,7 +10,7 @@
     <span
       v-if="config.itemsCount"
       class="self-center"
-    >Showing {{listController.items.length}} {{config.itemsCount.itemsName}}</span>
+    >Showing {{listController.visibleItems.length}} {{config.itemsCount.itemsName}}</span>
     <vs-pagination
       v-if="config.pagination"
       :total="listController.maxPage"
