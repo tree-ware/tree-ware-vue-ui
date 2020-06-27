@@ -2,7 +2,7 @@ import { Observable } from 'rxjs'
 
 export interface TimeRange {
     startTime: Date
-    endTime: Date
+    endTime?: Date
 }
 
 export interface ListFilter<ValueFilters> {

@@ -12,8 +12,7 @@ export function getTimeRange(startMinutesBefore: number = 10): TimeRange {
     startTime.setMinutes(startTime.getMinutes() - startMinutesBefore);
 
     return {
-        startTime,
-        endTime
+        startTime
     }
 }
 
