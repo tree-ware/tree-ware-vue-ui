@@ -18,7 +18,7 @@
         v-for="(option, index) in matchingOptions"
         :key="getDisplayName(option)"
         @mousedown.prevent
-        @click="selectOption(option)"
+        @click="optionClicked(index, option)"
         class="tree-ware-select-option-row"
         :class="{'highlight': index === highlightIndex}"
       >
@@ -115,8 +115,6 @@ export default class TreeWareSelect extends Vue {
   }
 
   private inputBlurred(): void {
-    this.editing = false;
-    this.showOptions = false;
     if (this.exactMatch) {
       if (this.autoSelectOnBlur) {
         const selected = this.selectHighlighted();
@@ -135,6 +133,8 @@ export default class TreeWareSelect extends Vue {
         : this.createOption(this.searchText);
       this.selectOption(option);
     }
+    this.editing = false;
+    this.showOptions = false;
   }
 
   private highlightDown(): void {
@@ -185,6 +185,11 @@ export default class TreeWareSelect extends Vue {
     return false;
   }
 
+  private optionClicked(index: number, option: Object | String): void {
+    this.highlightIndex = index;
+    this.selectOption(option);
+  }
+
   private selectOption(option: Object | String): void {
     this.searchText = this.getDisplayName(option);
     this.syncedValue = option;
@@ -192,7 +197,9 @@ export default class TreeWareSelect extends Vue {
   }
 
   private resetHighlightIndex(): void {
-    this.highlightIndex = this.exactMatch ? 0 : -1;
+    this.highlightIndex = this.options.findIndex(option =>
+      this.isExactMatchInternal(this.searchText, option)
+    );
   }
 
   private defaultIsExactMatch(
@@ -310,6 +317,7 @@ $secondary-color: lightgray;
 
   .tree-ware-select-options {
     display: block;
+    z-index: 1000;
   }
 }
 </style>
