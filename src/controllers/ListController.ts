@@ -270,8 +270,9 @@ export class ListController<ValueFilters, Data extends object, Token, UiState ex
             // should only be previous/next buttons.
 
             // TODO(deepak-nulu): need a mechanism to compare tokens since they
-            // are of a generic type. Until we have such a mechanism, we assume
-            // that the backend list is stable and do nothing.
+            // are of a generic type. Until we have such a mechanism, we replace
+            // only the current page token.
+            this.nextPageTokens[this.pageInternal + 1] = nextPageToken
         }
     }
 
