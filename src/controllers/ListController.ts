@@ -163,12 +163,14 @@ export class ListController<ValueFilters, Data extends object, Token, UiState ex
     filterChanged(filter: ListFilter<ValueFilters>): void {
         this.filterInternal = filter
         this.resetToFirstPage()
+        this.itemsInternal = []
         this.fetchList()
     }
 
     pageSizeChanged(pageSize: number): void {
         this.filterInternal.pageSize = pageSize
         this.resetToFirstPage()
+        this.itemsInternal = []
         this.fetchList()
     }
 
@@ -178,10 +180,13 @@ export class ListController<ValueFilters, Data extends object, Token, UiState ex
             return
         }
         this.pageInternal = page
+        this.itemsInternal = []
         this.fetchList()
     }
 
     refresh(): void {
+        // itemsInternal is not reset to prevent page flicker when refreshing
+        // the current page.
         this.fetchList()
     }
 
@@ -190,7 +195,6 @@ export class ListController<ValueFilters, Data extends object, Token, UiState ex
         this.errorInternal = ''
         this.setSelectionCount(0)
         this.setIsAllSelected(false)
-        this.itemsInternal = []
 
         const currentPageToken = this.nextPageTokens[this.pageInternal]
         const listData = this.fetchFunction(this.filterInternal, currentPageToken)
@@ -200,30 +204,43 @@ export class ListController<ValueFilters, Data extends object, Token, UiState ex
             takeUntil(this.destroyed)
         ).subscribe({
             next: (data: Data) => {
-                const uiState = this.uiStateFactory(index++, data)
-                this.itemsInternal.push({ data, uiState })
+                const uiState = this.uiStateFactory(index, data)
+                this.addItem(index++, { data, uiState })
                 if (!this.dataIsNested) return
 
                 const nestedList = (data as NestedList<Data>).nestedList
                 if (nestedList.length == 0) return
 
                 nestedList.forEach(nested => {
-                    const nestedUiState = this.uiStateFactory(index++, nested)
+                    const nestedUiState = this.uiStateFactory(index, nested)
                     nestedUiState.nestingLevel = 1
                     nestedUiState.visible = false
                     uiState.nestedList.push(nestedUiState)
-                    this.itemsInternal.push({ data: nested, uiState: nestedUiState })
+                    this.addItem(index++, { data: nested, uiState: nestedUiState })
                 })
             },
             error: (error: any) => {
+                this.setListLength(index)
                 this.setIsLoading(false)
                 this.errorInternal = String(error)
             },
             complete: () => {
+                this.setListLength(index)
                 this.setIsLoading(false)
                 this.updateNextPageToken(listData.nextPageToken)
             }
         })
+    }
+
+    private addItem(index: number, item: ListItem<Data, UiState>) {
+        if (index < this.itemsInternal.length) this.itemsInternal[index] = item
+        else this.itemsInternal.push(item)
+    }
+
+    // This method is needed because the number of items fetched could be
+    // less than the length of the reused itemsInternal array.
+    private setListLength(length: number) {
+        this.itemsInternal.length = length
     }
 
     private resetToFirstPage(): void {
