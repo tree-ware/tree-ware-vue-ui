@@ -34,16 +34,14 @@
 </template>
 
 <script lang="ts">
+import { TreeWareRefreshOption } from "./TreeWareRefreshControlInterfaces";
+
 import "reflect-metadata";
 import { Component, Emit, Prop, Vue } from "vue-property-decorator";
 
-interface RefreshOption {
-  description: string;
-  periodSeconds: number;
-}
-
 @Component
 export default class TreeWareRefreshControl extends Vue {
+  @Prop() readonly autoRefreshOptions!: TreeWareRefreshOption[];
   @Prop({ default: false }) disabled!: boolean;
 
   @Emit() refresh() {}
@@ -91,20 +89,5 @@ export default class TreeWareRefreshControl extends Vue {
   private periodSecondsInternal = 0;
 
   private timerId?: number;
-
-  private autoRefreshOptions: RefreshOption[] = [
-    {
-      description: "Every 1 minute",
-      periodSeconds: 60
-    },
-    {
-      description: "Every 2 minutes",
-      periodSeconds: 120
-    },
-    {
-      description: "Every 5 minutes",
-      periodSeconds: 300
-    }
-  ];
 }
 </script>
