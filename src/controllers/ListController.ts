@@ -36,6 +36,8 @@ export class ListController<ValueFilters, Data extends object, Token, UiState ex
         return this
     }
 
+    autoAdvance: boolean = false
+
     destroy(): void {
         this.destroyed.next()
         this.destroyed.complete()
@@ -182,6 +184,9 @@ export class ListController<ValueFilters, Data extends object, Token, UiState ex
     }
 
     refresh(): void {
+        if (this.autoAdvance && this.pageInternal < this.maxPage) {
+            ++this.pageInternal
+        }
         this.fetchList()
     }
 
