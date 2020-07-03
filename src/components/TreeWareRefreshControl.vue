@@ -1,5 +1,8 @@
 <template>
-  <div @click="refresh()" class="dropdown-button-container">
+  <vx-tooltip v-if="!showOptions" text="Refresh">
+    <vs-button @click="refresh()" :icon="getRefreshIcon()" size="large" />
+  </vx-tooltip>
+  <div v-else @click="refresh()" class="dropdown-button-container">
     <vs-dropdown class="cursor-pointer">
       <vs-button :icon="getRefreshIcon()" size="large" />
       <vs-dropdown-menu>
@@ -41,6 +44,7 @@ import { Component, Emit, Prop, Vue } from "vue-property-decorator";
 
 @Component
 export default class TreeWareRefreshControl extends Vue {
+  @Prop() readonly showOptions!: boolean;
   @Prop() readonly autoRefreshOptions!: TreeWareRefreshOption[];
   @Prop({ default: false }) disabled!: boolean;
 
