@@ -21,7 +21,8 @@ export class ListController<ValueFilters, Data extends object, Token, UiState ex
         private readonly uiStateFactory: UiStateFactory<Data, UiState>,
         private readonly dataIsNested: boolean = false,
         private readonly selectNestedIfHidden: boolean = false,
-        private readonly clientSideFilter?: ClientSideFilterFunction<Data, UiState>
+        private readonly clientSideFilter?: ClientSideFilterFunction<Data, UiState>,
+        private readonly itemsHaveUniqueId: boolean = false
     ) {
         this.resetToFirstPage()
     }
@@ -197,6 +198,13 @@ export class ListController<ValueFilters, Data extends object, Token, UiState ex
         this.setIsAllSelected(false)
 
         let newItems: ListItem<Data, UiState>[] = []
+        // If items have unique IDs, we can replace existing items all at once
+        // after new items have been fetched. This will avoid flicker in the
+        // UI. But if items don't have unique-IDs, replacing all at once can
+        // cause the UI not to update correctly. So if items don't have unique
+        // IDs, we clear the list first. This will cause flicker in the UI,
+        // but the UI will update correctly.
+        if (!this.itemsHaveUniqueId) this.itemsInternal = newItems
 
         const currentPageToken = this.nextPageTokens[this.pageInternal]
         const listData = this.fetchFunction(this.filterInternal, currentPageToken)
