@@ -1,3 +1,5 @@
+import { BehaviorSubject, Observable, Subject } from 'rxjs'
+import { takeUntil } from 'rxjs/operators'
 import {
     ClientSideFilterFunction,
     ListControllerUiInterface,
@@ -6,11 +8,8 @@ import {
     ListItem,
     NestedList,
     UiSelectionState,
-    UiStateFactory,
+    UiStateFactory
 } from './ListControllerInterfaces'
-
-import { BehaviorSubject, Observable, Subject } from 'rxjs'
-import { takeUntil } from 'rxjs/operators'
 
 export class ListController<ValueFilters, Data extends object, Token, UiState extends UiSelectionState>
     implements ListControllerUiInterface<ValueFilters>
@@ -235,9 +234,15 @@ export class ListController<ValueFilters, Data extends object, Token, UiState ex
                 this.errorInternal = String(error)
             },
             complete: () => {
-                this.itemsInternal = newItems
+                if (this.autoAdvance && newItems.length === 0) {
+                    // New page is empty, so do not auto-advance to it.
+                    // Stay on the previous page.
+                    --this.pageInternal
+                } else {
+                    this.itemsInternal = newItems
+                    this.updateNextPageToken(listData.nextPageToken)
+                }
                 this.setIsLoading(false)
-                this.updateNextPageToken(listData.nextPageToken)
             }
         })
     }
