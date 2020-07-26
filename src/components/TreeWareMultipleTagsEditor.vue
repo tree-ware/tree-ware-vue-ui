@@ -18,7 +18,7 @@
           class="flex flex-1"
         />
         <a
-          :class="{'invisible': isRequiredTag(tag)}"
+          :class="{ invisible: isRequiredTag(tag) }"
           @click="deleteTag(index)"
           :disabled="disabled"
           class="ml-4 mt-2"
@@ -27,17 +27,23 @@
         </a>
       </div>
     </div>
-    <vs-button @click="addTag()" icon="fa-plus" icon-pack="fas" :disabled="disabled" class="mt-4"></vs-button>
+    <vs-button
+      @click="addTag()"
+      icon="fa-plus"
+      icon-pack="fas"
+      :disabled="disabled"
+      class="mt-4"
+    ></vs-button>
   </div>
 </template>
 
 <script lang="ts">
-import "reflect-metadata";
-import { Component, Prop, Vue, Watch } from "vue-property-decorator";
+import 'reflect-metadata'
+import { Component, Prop, Vue, Watch } from 'vue-property-decorator'
 
-import { TagValueConstraints } from "./TagValueConstraints";
-import { Tag, ValueCount, TagValueCounts } from "./TagValueCounts";
-import TreeWareTagEditor from "./TreeWareTagEditor.vue";
+import { TagValueConstraints } from './TagValueConstraints'
+import { Tag, ValueCount, TagValueCounts } from './TagValueCounts'
+import TreeWareTagEditor from './TreeWareTagEditor.vue'
 
 @Component({
   components: {
@@ -45,49 +51,49 @@ import TreeWareTagEditor from "./TreeWareTagEditor.vue";
   }
 })
 export default class TreeWareMultipleTagsEditor extends Vue {
-  @Prop() tags!: Tag[];
-  @Prop() tagValueCounts?: TagValueCounts;
-  @Prop() readonly tagValueConstraints?: TagValueConstraints;
-  @Prop({ default: () => [] }) readonly requiredTags!: string[];
+  @Prop() tags!: Tag[]
+  @Prop() tagValueCounts?: TagValueCounts
+  @Prop() readonly tagValueConstraints?: TagValueConstraints
+  @Prop({ default: () => [] }) readonly requiredTags!: string[]
 
-  @Prop({ default: false }) readonly disabled!: boolean;
+  @Prop({ default: false }) readonly disabled!: boolean
 
   beforeMount() {
-    this.tagsInternal = [...this.tags];
-    this.keyOptions = this.getKeyOptions();
+    this.tagsInternal = [...this.tags]
+    this.keyOptions = this.getKeyOptions()
   }
 
-  @Watch("tags")
+  @Watch('tags')
   tagsChanged(newTags: Tag[], oldTags: Tag[]) {
-    this.tagsInternal = [...newTags];
+    this.tagsInternal = [...newTags]
   }
 
   getTags(): Tag[] {
-    return this.tagsInternal;
+    return this.tagsInternal
   }
 
   private isRequiredTag(tag: Tag): boolean {
-    return this.requiredTags.indexOf(tag.key) >= 0;
+    return this.requiredTags.indexOf(tag.key) >= 0
   }
 
   private getKeyOptions(): string[] | null {
-    if (this.requiredTags.length == 0) return null;
-    if (!this.tagValueCounts) return null;
+    if (this.requiredTags.length == 0) return null
+    if (!this.tagValueCounts) return null
     // Return keys from tagValueCounts that are not in requiredTags
     return Object.keys(this.tagValueCounts).filter(
       key => this.requiredTags.indexOf(key) < 0
-    );
+    )
   }
 
   private addTag(): void {
-    this.tagsInternal.push({ key: "", value: "" });
+    this.tagsInternal.push({ key: '', value: '' })
   }
 
   private deleteTag(index: number): void {
-    this.tagsInternal.splice(index, 1);
+    this.tagsInternal.splice(index, 1)
   }
 
-  private tagsInternal: Tag[] = [];
-  private keyOptions: string[] | null = null;
+  private tagsInternal: Tag[] = []
+  private keyOptions: string[] | null = null
 }
 </script>

@@ -6,9 +6,17 @@
     <vs-dropdown class="cursor-pointer">
       <vs-button :icon="getRefreshIcon()" size="large" />
       <vs-dropdown-menu>
-        <vs-dropdown-item @click="periodSeconds = 0" class="whitespace-no-wrap text-base">
+        <vs-dropdown-item
+          @click="periodSeconds = 0"
+          class="whitespace-no-wrap text-base"
+        >
           <div class="flex flex-row">
-            <vs-icon :icon="getOptionIcon(0)" color="secondary" size="1.0rem" class="mr-2 mt-1" />
+            <vs-icon
+              :icon="getOptionIcon(0)"
+              color="secondary"
+              size="1.0rem"
+              class="mr-2 mt-1"
+            />
             <span>Manual refresh</span>
           </div>
         </vs-dropdown-item>
@@ -27,7 +35,7 @@
                 size="1.0rem"
                 class="mr-2 mt-1"
               />
-              <span>{{option.description}}</span>
+              <span>{{ option.description }}</span>
             </div>
           </vs-dropdown-item>
         </vs-dropdown-group>
@@ -37,21 +45,21 @@
 </template>
 
 <script lang="ts">
-import { TreeWareRefreshOption } from "./TreeWareRefreshControlInterfaces";
+import { TreeWareRefreshOption } from './TreeWareRefreshControlInterfaces'
 
-import "reflect-metadata";
-import { Component, Emit, Prop, Vue } from "vue-property-decorator";
+import 'reflect-metadata'
+import { Component, Emit, Prop, Vue } from 'vue-property-decorator'
 
 @Component
 export default class TreeWareRefreshControl extends Vue {
-  @Prop() readonly showOptions!: boolean;
-  @Prop() readonly autoRefreshOptions!: TreeWareRefreshOption[];
-  @Prop({ default: false }) disabled!: boolean;
+  @Prop() readonly showOptions!: boolean
+  @Prop() readonly autoRefreshOptions!: TreeWareRefreshOption[]
+  @Prop({ default: false }) disabled!: boolean
 
   @Emit() refresh() {}
 
   private get periodSeconds(): number {
-    return this.periodSecondsInternal;
+    return this.periodSecondsInternal
   }
 
   private set periodSeconds(newValue: number) {
@@ -60,38 +68,38 @@ export default class TreeWareRefreshControl extends Vue {
         // Users may choose the manual-refresh option thinking that is the way
         // to trigger a manual refresh. So trigger a refresh if the manual-
         // refresh option is chosen even if it is already selected.
-        this.refresh();
+        this.refresh()
       } else {
         // In this case, there is an auto-refresh in progress. So the manual-
         // refresh option is treated as a way to cancel the auto-refresh.
-        this.periodSecondsInternal = newValue;
-        this.clearTimer();
+        this.periodSecondsInternal = newValue
+        this.clearTimer()
       }
     } else if (this.periodSecondsInternal !== newValue) {
-      this.periodSecondsInternal = newValue;
-      this.clearTimer();
-      this.timerId = setInterval(this.refresh, newValue * 1000);
+      this.periodSecondsInternal = newValue
+      this.clearTimer()
+      this.timerId = setInterval(this.refresh, newValue * 1000)
     }
   }
 
   private getRefreshIcon(): string {
-    return this.periodSeconds === 0 ? "refresh" : "timer";
+    return this.periodSeconds === 0 ? 'refresh' : 'timer'
   }
 
   private getOptionIcon(periodSeconds: number): string {
-    return this.periodSeconds === periodSeconds ? "check_circle" : "";
+    return this.periodSeconds === periodSeconds ? 'check_circle' : ''
   }
 
   private clearTimer(): void {
     if (this.timerId !== undefined) {
-      clearInterval(this.timerId);
-      this.timerId = undefined;
+      clearInterval(this.timerId)
+      this.timerId = undefined
     }
   }
 
   // 0 seconds refresh-period indicates manual-refresh.
-  private periodSecondsInternal = 0;
+  private periodSecondsInternal = 0
 
-  private timerId?: number;
+  private timerId?: number
 }
 </script>

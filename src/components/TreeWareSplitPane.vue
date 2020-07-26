@@ -10,15 +10,15 @@
 </template>
 
 <script lang="ts">
-import "reflect-metadata";
-import { Component, Prop, Vue } from "vue-property-decorator";
+import 'reflect-metadata'
+import { Component, Prop, Vue } from 'vue-property-decorator'
 
 @Component
 export default class TreeWareSplitPane extends Vue {
-  @Prop({ default: false }) readonly hasFirst!: boolean;
-  @Prop({ default: false }) readonly hasSecond!: boolean;
+  @Prop({ default: false }) readonly hasFirst!: boolean
+  @Prop({ default: false }) readonly hasSecond!: boolean
 
-  @Prop({ default: "" }) readonly firstClasses!: string;
-  @Prop({ default: "" }) readonly secondClasses!: string;
+  @Prop({ default: '' }) readonly firstClasses!: string
+  @Prop({ default: '' }) readonly secondClasses!: string
 }
 </script>

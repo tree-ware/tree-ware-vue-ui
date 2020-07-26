@@ -5,8 +5,8 @@
 </template>
 
 <script lang="ts">
-import "reflect-metadata";
-import { Component, Vue } from "vue-property-decorator";
+import 'reflect-metadata'
+import { Component, Vue } from 'vue-property-decorator'
 
 /** Wraps <router-link> tags to make them look like tabs. */
 @Component
@@ -33,7 +33,7 @@ $tab-padding-y: 0.75rem;
     border-bottom: solid $border-width $border-color;
     bottom: 0px;
     color: transparent; // hide the content specified below
-    content: "invisible content"; // it won't work in Chrome without this
+    content: 'invisible content'; // it won't work in Chrome without this
     left: 0px;
     position: absolute;
     right: 0px;

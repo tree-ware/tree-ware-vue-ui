@@ -7,7 +7,8 @@
       :icon="config.buttonIcon"
       :icon-pack="config.buttonIconPack"
       :class="config.buttonClass"
-    >{{config.buttonLabel}}</vs-button>
+      >{{ config.buttonLabel }}</vs-button
+    >
 
     <template v-if="showConfirmation">
       <span>Are you sure?</span>
@@ -19,31 +20,32 @@
         :icon-pack="config.buttonIconPack"
         :class="config.buttonClass"
         class="ml-4"
-      >{{config.buttonLabel}}</vs-button>
+        >{{ config.buttonLabel }}</vs-button
+      >
     </template>
   </div>
 </template>
 
 <script lang="ts">
-import "reflect-metadata";
-import { Component, Emit, Prop, Vue } from "vue-property-decorator";
+import 'reflect-metadata'
+import { Component, Emit, Prop, Vue } from 'vue-property-decorator'
 
 export interface ConfirmationButtonConfig {
-  buttonLabel: string;
-  buttonColor?: string;
-  buttonIcon?: string;
-  buttonIconPack?: string;
-  buttonClass?: string;
+  buttonLabel: string
+  buttonColor?: string
+  buttonIcon?: string
+  buttonIconPack?: string
+  buttonClass?: string
 }
 
 @Component
 export default class TreeWareConfirmationButton extends Vue {
-  @Prop() readonly config!: ConfirmationButtonConfig;
+  @Prop() readonly config!: ConfirmationButtonConfig
 
   @Emit() confirm() {
-    this.showConfirmation = false;
+    this.showConfirmation = false
   }
 
-  private showConfirmation = false;
+  private showConfirmation = false
 }
 </script>
