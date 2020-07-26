@@ -8,22 +8,22 @@
 
 // Groups consecutive items while rendering a list.
 export class ListGroupingController<GroupingValue> {
-    constructor(private groups: string[]) {
-        this.groupCount = groups.length
-    }
+  constructor(private groups: string[]) {
+    this.groupCount = groups.length
+  }
 
-    getGroup(elementIndex: number, currentValue: GroupingValue): string {
-        if (elementIndex === 0) {
-            this.groupIndex = 0
-            this.previousValue = currentValue
-        } else if (currentValue !== this.previousValue) {
-            this.groupIndex = (this.groupIndex + 1) % this.groupCount
-            this.previousValue = currentValue
-        }
-        return this.groups[this.groupIndex]
+  getGroup(elementIndex: number, currentValue: GroupingValue): string {
+    if (elementIndex === 0) {
+      this.groupIndex = 0
+      this.previousValue = currentValue
+    } else if (currentValue !== this.previousValue) {
+      this.groupIndex = (this.groupIndex + 1) % this.groupCount
+      this.previousValue = currentValue
     }
+    return this.groups[this.groupIndex]
+  }
 
-    private groupCount: number;
-    private groupIndex = 0
-    private previousValue?: GroupingValue = undefined
+  private groupCount: number
+  private groupIndex = 0
+  private previousValue?: GroupingValue = undefined
 }

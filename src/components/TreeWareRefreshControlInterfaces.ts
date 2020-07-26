@@ -1,4 +1,4 @@
 export interface TreeWareRefreshOption {
-    description: string;
-    periodSeconds: number;
+  description: string
+  periodSeconds: number
 }
