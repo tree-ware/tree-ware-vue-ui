@@ -46,8 +46,9 @@ export default class TreeWareNetworkGraph extends Vue {
       if (
         !nodeIdList.includes(link.sourceId) ||
         !nodeIdList.includes(link.targetId)
-      )
+      ) {
         return
+      }
     }
     this.populateLinkTypes()
     this.populateLinksColors()
@@ -177,6 +178,7 @@ export default class TreeWareNetworkGraph extends Vue {
                 .attr('dy', 2 * (i + 1) * LABELS_VERTICAL_GAP)
             })
           }),
+        update => update,
         exit => exit.remove()
       )
       .attr('width', NODE_WIDTH - LABELS_GAP)
