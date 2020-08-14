@@ -1,10 +1,5 @@
+import { NodeType } from './TreeWareNetworkGraphTypes'
 import * as d3 from 'd3'
-
-export enum NodeType {
-  INGRESS = 'ingress',
-  INTERNAL = 'internal',
-  EGRESS = 'egress'
-}
 
 export interface Node {
   id: string
@@ -43,5 +38,3 @@ export interface SimLink extends d3.SimulationLinkDatum<SimNode> {
   linkType: string
   classes?: string
 }
-
-export type SimNodeMap = { [nodeId: string]: SimNode }

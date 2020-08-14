@@ -18,10 +18,9 @@ import {
   Node,
   Link,
   SimNode,
-  SimLink,
-  SimNodeMap,
-  NodeType
-} from '../components/TreeWareNetworkGraphInterfaces'
+  SimLink
+} from './TreeWareNetworkGraphInterfaces'
+import { NodeType } from './TreeWareNetworkGraphTypes'
 
 const NODE_WIDTH = 100
 const NODE_HEIGHT = 60
@@ -29,6 +28,8 @@ const NODE_HEIGHT = 60
 const LINKS_GAP = 10
 const LABELS_GAP = 10
 const LABELS_VERTICAL_GAP = 8
+
+export type SimNodeMap = { [nodeId: string]: SimNode }
 
 @Component
 export default class TreeWareNetworkGraph extends Vue {
