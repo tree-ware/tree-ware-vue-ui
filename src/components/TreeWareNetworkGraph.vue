@@ -1,10 +1,7 @@
 <template>
   <svg ref="svg" class="tree-ware-network-graph">
-    <g ref="svgGLink" />
-    <g>
-      <g ref="svgGNodeBox" />
-      <g ref="svgGNodeText" />
-    </g>
+    <g ref="linksG" />
+    <g ref="nodesG" />
   </svg>
 </template>
 
@@ -24,10 +21,17 @@ import { NodeType } from './TreeWareNetworkGraphTypes'
 
 const NODE_WIDTH = 100
 const NODE_HEIGHT = 60
+const NODE_BORDER_WIDTH = 1
+const NODE_PADDING = 10
 
 const LINKS_GAP = 10
-const LABELS_GAP = 10
-const LABELS_VERTICAL_GAP = 8
+const LABELS_VERTICAL_GAP = 12
+
+const NODE_WIDTH_HALF = NODE_WIDTH / 2
+const NODE_HEIGHT_HALF = NODE_HEIGHT / 2
+
+const NODE_BORDER_WIDTH_DOUBLE = NODE_BORDER_WIDTH * 2
+const NODE_PADDING_DOUBLE = NODE_PADDING * 2
 
 export type SimNodeMap = { [nodeId: string]: SimNode }
 
@@ -36,9 +40,8 @@ export default class TreeWareNetworkGraph extends Vue {
   @Prop() readonly graph!: Graph
 
   @Ref() readonly svg!: SVGElement
-  @Ref() readonly svgGLink!: SVGGElement
-  @Ref() readonly svgGNodeBox!: SVGGElement
-  @Ref() readonly svgGNodeText!: SVGGElement
+  @Ref() readonly linksG!: SVGGElement
+  @Ref() readonly nodesG!: SVGGElement
 
   @Watch('graph', { deep: true })
   graphChanged(newGraph: Graph, oldGraph: Graph) {
@@ -75,18 +78,11 @@ export default class TreeWareNetworkGraph extends Vue {
     const tooltip = this.appendTooltipElementToBody()
 
     // Create the links
-    const finalPath = this.createPath(this.svgGLink, 'path-final', false)
-    const initialPath = this.createPath(this.svgGLink, 'path-initial', true)
+    const finalPath = this.createPath(this.linksG, 'path-final', false)
+    const initialPath = this.createPath(this.linksG, 'path-initial', true)
 
-    // Create node boxes
-    const nodes = this.createNodes(this.svgGNodeBox, width, height, tooltip)
-
-    // Create node labels
-    const labels = this.createNodeLabels(
-      this.svgGNodeText,
-      labelDelimitter,
-      tooltip
-    )
+    // Create the nodes
+    const nodes = this.createNodes(this.nodesG, labelDelimitter, tooltip)
 
     // Define forces on the graph
     d3.forceSimulation(this.simNodes)
@@ -103,12 +99,11 @@ export default class TreeWareNetworkGraph extends Vue {
       .on('tick', () => {
         this.moveLinksOnTick(finalPath, width, height, false)
         this.moveLinksOnTick(initialPath, width, height, true)
-        nodes
-          .attr('x', node => boundedX(node, width) - NODE_WIDTH / 2)
-          .attr('y', node => boundedY(node, height))
-        labels
-          .attr('x', node => boundedX(node, width) - NODE_WIDTH / 2)
-          .attr('y', node => boundedY(node, height))
+        nodes.attr('transform', node => {
+          const x = boundedX(node, width) - NODE_WIDTH_HALF
+          const y = boundedY(node, height)
+          return `translate(${x} ${y})`
+        })
       })
   }
 
@@ -140,12 +135,12 @@ export default class TreeWareNetworkGraph extends Vue {
   }
 
   private createPath(
-    svgGLink: SVGElement,
+    linksG: SVGElement,
     pathId: string,
     createMarker: boolean
   ) {
     const path = d3
-      .select(svgGLink)
+      .select(linksG)
       .selectAll<SVGLineElement, SimLink>(`#${pathId}`)
       .data(this.simLinks, getLinkId)
       .join('path')
@@ -156,78 +151,52 @@ export default class TreeWareNetworkGraph extends Vue {
     return path
   }
 
-  private createNodeLabels(
-    svgGNodeText: SVGGElement,
+  private createNodes(
+    nodesG: SVGGElement,
     labelDelimitter: string,
     tooltip: d3.Selection<HTMLDivElement, unknown, HTMLElement, any>
   ) {
-    const gNodeTextSelection = d3.select(svgGNodeText)
-    const labels = gNodeTextSelection
-      .selectAll<SVGSVGElement, Node>('svg')
-      .data(this.simNodes, (node: Node) => node.id + '.labels')
+    const nodes = d3
+      .select(nodesG)
+      .selectAll<SVGGElement, Node>('g')
+      .data(this.simNodes, (node: Node) => node.id)
       .join(
-        enter =>
-          enter.append('svg').each(function (d: SimNode) {
-            const labels = d.name.split(labelDelimitter)
-            labels.forEach((label, i) => {
-              d3.select(this)
-                .attr('id', label + i)
-                .append('text')
-                .text(label)
-                .classed('node-text', true)
-                .attr('dx', LABELS_GAP)
-                .attr('dy', 2 * (i + 1) * LABELS_VERTICAL_GAP)
+        enter => {
+          const node = enter.append('g')
+          node
+            .append('rect')
+            .attr('class', 'node-border')
+            .attr('x', NODE_BORDER_WIDTH)
+            .attr('y', NODE_BORDER_WIDTH)
+            .attr('width', NODE_WIDTH - NODE_BORDER_WIDTH_DOUBLE)
+            .attr('height', NODE_HEIGHT - NODE_BORDER_WIDTH_DOUBLE)
+          node
+            .append('svg')
+            .attr('class', 'node-content')
+            .attr('x', NODE_PADDING)
+            .attr('y', NODE_PADDING)
+            .attr('width', NODE_WIDTH - NODE_PADDING_DOUBLE)
+            .attr('height', NODE_HEIGHT - NODE_PADDING_DOUBLE)
+            .each(function (d: SimNode) {
+              const labels = d.name.split(labelDelimitter)
+              labels.forEach((label, i) => {
+                d3.select(this)
+                  .attr('id', label + i)
+                  .append('text')
+                  .text(label)
+                  .attr('dy', (i + 1) * LABELS_VERTICAL_GAP)
+              })
             })
-          }),
+          return node
+        },
         update => update,
         exit => exit.remove()
       )
-      .attr('width', NODE_WIDTH - LABELS_GAP)
-      .attr('height', NODE_HEIGHT)
-    return this.linkTooltipToSvgSvgElement(labels, tooltip)
-  }
-
-  private createNodes(
-    svgGNodeBox: SVGGElement,
-    width: number,
-    height: number,
-    tooltip: d3.Selection<HTMLDivElement, unknown, HTMLElement, any>
-  ) {
-    const gNodeBoxSelection = d3.select(svgGNodeBox)
-    const nodes = gNodeBoxSelection
-      .attr('width', width)
-      .attr('height', height)
-      .selectAll<SVGRectElement, Node>('rect')
-      .data(this.simNodes, (node: Node) => node.id)
-      .join('rect')
-      .attr('class', 'node-box')
-    return this.linkTooltipToSvgRectElement(nodes, tooltip)
-  }
-
-  private linkTooltipToSvgRectElement(
-    nodes: d3.Selection<SVGRectElement, SimNode, SVGGElement, unknown>,
-    tooltip: d3.Selection<HTMLDivElement, unknown, HTMLElement, any>
-  ) {
-    return nodes
-      .on('mouseover.tooltip', d => {
-        tooltip.transition().duration(300).style('opacity', 1.0)
-        tooltip
-          .html(d.tooltipText)
-          .style('left', d3.event.pageX + 'px')
-          .style('top', d3.event.pageY + 10 + 'px')
-      })
-      .on('mouseout.tooltip', function () {
-        tooltip.transition().duration(100).style('opacity', 0)
-      })
-      .on('mousemove', function () {
-        tooltip
-          .style('left', d3.event.pageX + 'px')
-          .style('top', d3.event.pageY + 10 + 'px')
-      })
+    return this.linkTooltipToSvgSvgElement(nodes, tooltip)
   }
 
   private linkTooltipToSvgSvgElement(
-    nodes: d3.Selection<SVGSVGElement, SimNode, SVGGElement, unknown>,
+    nodes: d3.Selection<SVGGElement, SimNode, SVGGElement, unknown>,
     tooltip: d3.Selection<HTMLDivElement, unknown, HTMLElement, any>
   ) {
     return nodes
@@ -261,18 +230,18 @@ export default class TreeWareNetworkGraph extends Vue {
   ) {
     const linkTypes = this.linkTypes
     path.attr('d', function (d) {
-      let sourceX = boundedX(d.source, width) + NODE_WIDTH / 2,
-        targetX = boundedX(d.target, width) - NODE_WIDTH / 2,
-        sourceY = boundedY(d.source, height) + NODE_HEIGHT / 2,
-        targetY = boundedY(d.target, height) + NODE_HEIGHT / 2
+      let sourceX = boundedX(d.source, width) + NODE_WIDTH_HALF,
+        targetX = boundedX(d.target, width) - NODE_WIDTH_HALF,
+        sourceY = boundedY(d.source, height) + NODE_HEIGHT_HALF,
+        targetY = boundedY(d.target, height) + NODE_HEIGHT_HALF
       if (
         d.source.nodeType === NodeType.INTERNAL &&
         d.target.nodeType === NodeType.INTERNAL
       ) {
         if (sourceY < targetY) {
-          targetX = boundedX(d.target, width) + NODE_WIDTH / 2
+          targetX = boundedX(d.target, width) + NODE_WIDTH_HALF
         } else {
-          sourceX = boundedX(d.source, width) - NODE_WIDTH / 2
+          sourceX = boundedX(d.source, width) - NODE_WIDTH_HALF
         }
       }
       const dx = targetX - sourceX,
@@ -326,7 +295,7 @@ export default class TreeWareNetworkGraph extends Vue {
 function boundedX(node: SimNode, width: number): number {
   switch (node.nodeType) {
     case NodeType.INGRESS: {
-      node.x = NODE_WIDTH / 2
+      node.x = NODE_WIDTH_HALF
       return node.x
     }
     case NodeType.INTERNAL: {
@@ -334,7 +303,7 @@ function boundedX(node: SimNode, width: number): number {
       return node.x
     }
     case NodeType.EGRESS: {
-      node.x = width - NODE_WIDTH / 2
+      node.x = width - NODE_WIDTH_HALF
       return node.x
     }
   }
@@ -344,7 +313,7 @@ function boundedX(node: SimNode, width: number): number {
  * @returns the bounded value of `node.y`.
  */
 function boundedY(node: SimNode, height: number): number {
-  node.y = Math.max(NODE_HEIGHT / 2, node.y || NODE_HEIGHT / 2)
+  node.y = Math.max(NODE_HEIGHT_HALF, node.y || NODE_HEIGHT_HALF)
   node.y = Math.min(node.y, height - NODE_HEIGHT)
   return node.y
 }
@@ -404,39 +373,23 @@ function generateArcDefinitionString(
   )
 }
 </script>
+
 <style lang="scss" scoped>
-$primary-color: #33a7ff;
-$background-color: #10163a;
-$text-color: #c2c6dc;
 $stroke-width: 1px;
-$width: 100px;
-$height: 60px;
-$font-size: 10px;
 $border-radius: 5px;
 $tooltip-max-width: 500px;
-$content-dark-bg: #262c49;
 $padding: 4px;
 
-.tree-ware-network-graph /deep/ .node-box {
-  width: $width;
-  height: $height;
-  rx: $border-radius;
-  ry: $border-radius;
-  stroke: $primary-color;
-  stroke-width: $stroke-width;
-  fill: $background-color;
+.tree-ware-network-graph {
+  .node-border {
+    rx: $border-radius;
+    ry: $border-radius;
+    stroke-width: $stroke-width;
+  }
 }
 
-.tree-ware-network-graph /deep/ .node-text {
-  width: $width;
-  height: $height;
-  stroke: $text-color;
-  font-size: $font-size;
-}
-
-.tree-ware-network-graph /deep/ .tooltip {
+.tooltip {
   position: absolute;
-  background-color: $content-dark-bg;
   max-width: $tooltip-max-width;
   height: auto;
   padding: $padding;
