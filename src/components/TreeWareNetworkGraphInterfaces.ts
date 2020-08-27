@@ -1,5 +1,20 @@
-import { NodeType } from './TreeWareNetworkGraphTypes'
 import * as d3 from 'd3'
+import { NodeType } from './TreeWareNetworkGraphTypes'
+
+export interface NetworkGraphNodeConfig {
+  width: number
+  height: number
+  borderWidth: number
+  padding: number
+}
+
+export interface NetworkGraphConfig {
+  node: NetworkGraphNodeConfig
+  renderNodeContent: (
+    config: NetworkGraphNodeConfig,
+    node: d3.Selection<SVGSVGElement, SimNode, SVGGElement, unknown>
+  ) => void
+}
 
 export interface Node {
   id: string
@@ -20,7 +35,6 @@ export interface Link {
 export interface Graph {
   nodes: Node[]
   links: Link[]
-  labelDelimitter: string
 }
 
 export interface SimNode extends d3.SimulationNodeDatum {

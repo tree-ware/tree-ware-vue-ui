@@ -12,31 +12,24 @@ import 'reflect-metadata'
 import { Component, Prop, Ref, Vue, Watch } from 'vue-property-decorator'
 import {
   Graph,
-  Node,
   Link,
-  SimNode,
-  SimLink
+  NetworkGraphConfig,
+  Node,
+  SimLink,
+  SimNode
 } from './TreeWareNetworkGraphInterfaces'
 import { NodeType } from './TreeWareNetworkGraphTypes'
 
-const NODE_WIDTH = 100
-const NODE_HEIGHT = 60
 const NODE_BORDER_WIDTH = 1
 const NODE_PADDING = 10
 
 const LINKS_GAP = 10
-const LABELS_VERTICAL_GAP = 12
-
-const NODE_WIDTH_HALF = NODE_WIDTH / 2
-const NODE_HEIGHT_HALF = NODE_HEIGHT / 2
-
-const NODE_BORDER_WIDTH_DOUBLE = NODE_BORDER_WIDTH * 2
-const NODE_PADDING_DOUBLE = NODE_PADDING * 2
 
 export type SimNodeMap = { [nodeId: string]: SimNode }
 
 @Component
 export default class TreeWareNetworkGraph extends Vue {
+  @Prop() readonly config!: NetworkGraphConfig
   @Prop() readonly graph!: Graph
 
   @Ref() readonly svg!: SVGElement
@@ -59,6 +52,16 @@ export default class TreeWareNetworkGraph extends Vue {
     this.draw()
   }
 
+  beforeMount() {
+    const nodeConfig = this.config.node
+    this.nodeWidthHalf = nodeConfig.width / 2
+    this.nodeHeightHalf = nodeConfig.height / 2
+    this.nodeBorderWidthDouble = nodeConfig.borderWidth * 2
+    this.nodePaddingDouble = nodeConfig.padding * 2
+
+    this.collisionRadius = nodeConfig.height * 0.75
+  }
+
   mounted() {
     this.populateLinkTypes()
     this.populateLinksColors()
@@ -70,8 +73,6 @@ export default class TreeWareNetworkGraph extends Vue {
     const height = this.svg.clientHeight
     ;[this.simNodes, this.simLinks] = toSim(this.graph)
 
-    const labelDelimitter = this.graph.labelDelimitter
-
     // Create the defs for the markers
     this.initializeMarkersAsDefs(this.svg)
     // Initialize tooltip element
@@ -82,7 +83,7 @@ export default class TreeWareNetworkGraph extends Vue {
     const initialPath = this.createPath(this.linksG, 'path-initial', true)
 
     // Create the nodes
-    const nodes = this.createNodes(this.nodesG, labelDelimitter, tooltip)
+    const nodes = this.createNodes(this.nodesG, tooltip)
 
     // Define forces on the graph
     d3.forceSimulation(this.simNodes)
@@ -95,13 +96,19 @@ export default class TreeWareNetworkGraph extends Vue {
       )
       .force('charge', d3.forceManyBody())
       .force('center', d3.forceCenter(width / 2, height / 2))
-      .force('collision', d3.forceCollide().radius(NODE_HEIGHT * (3 / 4)))
+      .force('collision', d3.forceCollide().radius(this.collisionRadius))
       .on('tick', () => {
         this.moveLinksOnTick(finalPath, width, height, false)
         this.moveLinksOnTick(initialPath, width, height, true)
         nodes.attr('transform', node => {
-          const x = boundedX(node, width) - NODE_WIDTH_HALF
-          const y = boundedY(node, height)
+          const x =
+            boundedX(node, this.nodeWidthHalf, width) - this.nodeWidthHalf
+          const y = boundedY(
+            node,
+            this.config.node.height,
+            this.nodeHeightHalf,
+            height
+          )
           return `translate(${x} ${y})`
         })
       })
@@ -153,9 +160,9 @@ export default class TreeWareNetworkGraph extends Vue {
 
   private createNodes(
     nodesG: SVGGElement,
-    labelDelimitter: string,
     tooltip: d3.Selection<HTMLDivElement, unknown, HTMLElement, any>
   ) {
+    const nodeConfig = this.config.node
     const nodes = d3
       .select(nodesG)
       .selectAll<SVGGElement, Node>('g')
@@ -168,25 +175,16 @@ export default class TreeWareNetworkGraph extends Vue {
             .attr('class', 'node-border')
             .attr('x', NODE_BORDER_WIDTH)
             .attr('y', NODE_BORDER_WIDTH)
-            .attr('width', NODE_WIDTH - NODE_BORDER_WIDTH_DOUBLE)
-            .attr('height', NODE_HEIGHT - NODE_BORDER_WIDTH_DOUBLE)
-          node
+            .attr('width', nodeConfig.width - this.nodeBorderWidthDouble)
+            .attr('height', nodeConfig.height - this.nodeBorderWidthDouble)
+          const nodeContent = node
             .append('svg')
             .attr('class', 'node-content')
             .attr('x', NODE_PADDING)
             .attr('y', NODE_PADDING)
-            .attr('width', NODE_WIDTH - NODE_PADDING_DOUBLE)
-            .attr('height', NODE_HEIGHT - NODE_PADDING_DOUBLE)
-            .each(function (d: SimNode) {
-              const labels = d.name.split(labelDelimitter)
-              labels.forEach((label, i) => {
-                d3.select(this)
-                  .attr('id', label + i)
-                  .append('text')
-                  .text(label)
-                  .attr('dy', (i + 1) * LABELS_VERTICAL_GAP)
-              })
-            })
+            .attr('width', nodeConfig.width - this.nodePaddingDouble)
+            .attr('height', nodeConfig.height - this.nodePaddingDouble)
+          this.config.renderNodeContent(this.config.node, nodeContent)
           return node
         },
         update => update,
@@ -228,42 +226,66 @@ export default class TreeWareNetworkGraph extends Vue {
     height: number,
     isInitial: boolean
   ) {
-    const linkTypes = this.linkTypes
-    path.attr('d', function (d) {
-      let sourceX = boundedX(d.source, width) + NODE_WIDTH_HALF,
-        targetX = boundedX(d.target, width) - NODE_WIDTH_HALF,
-        sourceY = boundedY(d.source, height) + NODE_HEIGHT_HALF,
-        targetY = boundedY(d.target, height) + NODE_HEIGHT_HALF
-      if (
-        d.source.nodeType === NodeType.INTERNAL &&
-        d.target.nodeType === NodeType.INTERNAL
-      ) {
-        if (sourceY < targetY) {
-          targetX = boundedX(d.target, width) + NODE_WIDTH_HALF
-        } else {
-          sourceX = boundedX(d.source, width) - NODE_WIDTH_HALF
-        }
-      }
-      const dx = targetX - sourceX,
-        dy = targetY - sourceY,
-        dr = Math.sqrt(dx * dx + dy * dy)
-
-      // for len - 30-60-90 triangle rule, trig to calculate mid points
-      let len = dr - (dr / 2) * Math.sqrt(3),
-        endX = (targetX + sourceX) / 2,
-        endY = (targetY + sourceY) / 2
-
-      const index = linkTypes.indexOf(d.linkType)
-      if (index !== -1) {
-        endY += index * LINKS_GAP
-      }
-      endX = endX + (dy * len) / dr
-      endY = endY + (-dx * len) / dr
-
-      if (isInitial)
-        return generateArcDefinitionString(sourceX, sourceY, dr, endX, endY)
-      else return generateArcDefinitionString(endX, endY, dr, targetX, targetY)
+    path.attr('d', d => {
+      return this.getLinkArc(d, width, height, isInitial)
     })
+  }
+
+  private getLinkArc(
+    d: SimLink,
+    width: number,
+    height: number,
+    isInitial: boolean
+  ): string {
+    let sourceX =
+        boundedX(d.source, this.nodeWidthHalf, width) + this.nodeWidthHalf,
+      targetX =
+        boundedX(d.target, this.nodeWidthHalf, width) - this.nodeWidthHalf,
+      sourceY =
+        boundedY(
+          d.source,
+          this.config.node.height,
+          this.nodeHeightHalf,
+          height
+        ) + this.nodeHeightHalf,
+      targetY =
+        boundedY(
+          d.target,
+          this.config.node.height,
+          this.nodeHeightHalf,
+          height
+        ) + this.nodeHeightHalf
+    if (
+      d.source.nodeType === NodeType.INTERNAL &&
+      d.target.nodeType === NodeType.INTERNAL
+    ) {
+      if (sourceY < targetY) {
+        targetX =
+          boundedX(d.target, this.nodeWidthHalf, width) + this.nodeWidthHalf
+      } else {
+        sourceX =
+          boundedX(d.source, this.nodeWidthHalf, width) - this.nodeWidthHalf
+      }
+    }
+    const dx = targetX - sourceX,
+      dy = targetY - sourceY,
+      dr = Math.sqrt(dx * dx + dy * dy)
+
+    // for len - 30-60-90 triangle rule, trig to calculate mid points
+    let len = dr - (dr / 2) * Math.sqrt(3),
+      endX = (targetX + sourceX) / 2,
+      endY = (targetY + sourceY) / 2
+
+    const index = this.linkTypes.indexOf(d.linkType)
+    if (index !== -1) {
+      endY += index * LINKS_GAP
+    }
+    endX = endX + (dy * len) / dr
+    endY = endY + (-dx * len) / dr
+
+    if (isInitial)
+      return generateArcDefinitionString(sourceX, sourceY, dr, endX, endY)
+    else return generateArcDefinitionString(endX, endY, dr, targetX, targetY)
   }
 
   private populateLinksColors() {
@@ -280,6 +302,13 @@ export default class TreeWareNetworkGraph extends Vue {
     })
   }
 
+  private nodeWidthHalf: number = 0
+  private nodeHeightHalf: number = 0
+  private nodeBorderWidthDouble: number = 0
+  private nodePaddingDouble: number = 0
+
+  private collisionRadius: number = 0
+
   private simNodes: SimNode[] = []
   private simLinks: SimLink[] = []
   private linkColors: string[] = []
@@ -292,10 +321,10 @@ export default class TreeWareNetworkGraph extends Vue {
 
  @returns the bounded value of `node.x`.
  */
-function boundedX(node: SimNode, width: number): number {
+function boundedX(node: SimNode, nodeWidthHalf: number, width: number): number {
   switch (node.nodeType) {
     case NodeType.INGRESS: {
-      node.x = NODE_WIDTH_HALF
+      node.x = nodeWidthHalf
       return node.x
     }
     case NodeType.INTERNAL: {
@@ -303,7 +332,7 @@ function boundedX(node: SimNode, width: number): number {
       return node.x
     }
     case NodeType.EGRESS: {
-      node.x = width - NODE_WIDTH_HALF
+      node.x = width - nodeWidthHalf
       return node.x
     }
   }
@@ -312,9 +341,14 @@ function boundedX(node: SimNode, width: number): number {
 /**
  * @returns the bounded value of `node.y`.
  */
-function boundedY(node: SimNode, height: number): number {
-  node.y = Math.max(NODE_HEIGHT_HALF, node.y || NODE_HEIGHT_HALF)
-  node.y = Math.min(node.y, height - NODE_HEIGHT)
+function boundedY(
+  node: SimNode,
+  nodeHeight: number,
+  nodeHeightHalf: number,
+  graphHeight: number
+): number {
+  node.y = Math.max(nodeHeightHalf, node.y || nodeHeightHalf)
+  node.y = Math.min(node.y, graphHeight - nodeHeight)
   return node.y
 }
 
