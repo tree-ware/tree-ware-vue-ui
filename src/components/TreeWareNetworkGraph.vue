@@ -98,19 +98,25 @@ export default class TreeWareNetworkGraph extends Vue {
       .force('center', d3.forceCenter(width / 2, height / 2))
       .force('collision', d3.forceCollide().radius(this.collisionRadius))
       .on('tick', () => {
-        this.moveLinksOnTick(finalPath, width, height, false)
-        this.moveLinksOnTick(initialPath, width, height, true)
         nodes.attr('transform', node => {
-          const x =
-            boundedX(node, this.nodeWidthHalf, width) - this.nodeWidthHalf
+          const x = boundedX(
+            node,
+            this.config.node.width,
+            this.nodeWidthHalf,
+            width
+          )
           const y = boundedY(
             node,
             this.config.node.height,
             this.nodeHeightHalf,
             height
           )
+          node.x = x
+          node.y = y
           return `translate(${x} ${y})`
         })
+        this.moveLinksOnTick(finalPath, false)
+        this.moveLinksOnTick(initialPath, true)
       })
   }
 
@@ -222,50 +228,28 @@ export default class TreeWareNetworkGraph extends Vue {
       SVGElement,
       unknown
     >,
-    width: number,
-    height: number,
     isInitial: boolean
   ) {
-    path.attr('d', d => {
-      return this.getLinkArc(d, width, height, isInitial)
-    })
+    path.attr('d', d => this.getLinkArc(d, isInitial))
   }
 
-  private getLinkArc(
-    d: SimLink,
-    width: number,
-    height: number,
-    isInitial: boolean
-  ): string {
-    let sourceX =
-        boundedX(d.source, this.nodeWidthHalf, width) + this.nodeWidthHalf,
-      targetX =
-        boundedX(d.target, this.nodeWidthHalf, width) - this.nodeWidthHalf,
-      sourceY =
-        boundedY(
-          d.source,
-          this.config.node.height,
-          this.nodeHeightHalf,
-          height
-        ) + this.nodeHeightHalf,
-      targetY =
-        boundedY(
-          d.target,
-          this.config.node.height,
-          this.nodeHeightHalf,
-          height
-        ) + this.nodeHeightHalf
+  private getLinkArc(d: SimLink, isInitial: boolean): string {
+    // Set the source of the link to the middle of the right edge of the node.
+    let sourceX = (d.source.x || 0) + this.config.node.width
+    let sourceY = (d.source.y || 0) + this.nodeHeightHalf
+    // Set the target of the link to the middle of the left edge of the node.
+    let targetX = d.target.x || 0
+    let targetY = (d.target.y || 0) + this.nodeHeightHalf
+
+    // For internal nodes, the links should be on the right edge if the source
+    // is above the target, and on the left edge if the source is below the
+    // target.
     if (
       d.source.nodeType === NodeType.INTERNAL &&
       d.target.nodeType === NodeType.INTERNAL
     ) {
-      if (sourceY < targetY) {
-        targetX =
-          boundedX(d.target, this.nodeWidthHalf, width) + this.nodeWidthHalf
-      } else {
-        sourceX =
-          boundedX(d.source, this.nodeWidthHalf, width) - this.nodeWidthHalf
-      }
+      if (sourceY < targetY) targetX += this.config.node.width
+      else sourceX -= this.config.node.width
     }
     const dx = targetX - sourceX,
       dy = targetY - sourceY,
@@ -321,19 +305,21 @@ export default class TreeWareNetworkGraph extends Vue {
 
  @returns the bounded value of `node.x`.
  */
-function boundedX(node: SimNode, nodeWidthHalf: number, width: number): number {
+function boundedX(
+  node: SimNode,
+  nodeWidth: number,
+  nodeWidthHalf: number,
+  width: number
+): number {
   switch (node.nodeType) {
     case NodeType.INGRESS: {
-      node.x = nodeWidthHalf
-      return node.x
+      return 0
     }
     case NodeType.INTERNAL: {
-      node.x = width / 2
-      return node.x
+      return width / 2 - nodeWidthHalf
     }
     case NodeType.EGRESS: {
-      node.x = width - nodeWidthHalf
-      return node.x
+      return width - nodeWidth
     }
   }
 }
@@ -347,9 +333,12 @@ function boundedY(
   nodeHeightHalf: number,
   graphHeight: number
 ): number {
-  node.y = Math.max(nodeHeightHalf, node.y || nodeHeightHalf)
-  node.y = Math.min(node.y, graphHeight - nodeHeight)
-  return node.y
+  const nodeY = node.y || 0
+  const minimum = nodeHeightHalf
+  const maximum = graphHeight - nodeHeight
+  if (nodeY < minimum) return minimum
+  if (nodeY > maximum) return maximum
+  return nodeY
 }
 
 function toSim(graph: Graph): [SimNode[], SimLink[]] {
