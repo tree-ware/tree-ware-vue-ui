@@ -72,17 +72,9 @@ export default class TreeWareNetworkGraph extends Vue {
     const width = this.svg.clientWidth
     ;[this.simNodes, this.simLinks] = toSim(this.graph)
 
-    // Create the defs for the markers
-    this.initializeMarkersAsDefs(this.svg)
+    this.createArrowheadDefinitions(this.svg)
     // Initialize tooltip element
     const tooltip = this.appendTooltipElementToBody()
-
-    // Create the links
-    const finalPath = this.createPath(this.linksG, 'path-final', false)
-    const initialPath = this.createPath(this.linksG, 'path-initial', true)
-
-    // Create the nodes
-    const nodes = this.createNodes(this.nodesG, tooltip)
 
     // Define forces on the graph
     d3.forceSimulation(this.simNodes)
@@ -96,20 +88,8 @@ export default class TreeWareNetworkGraph extends Vue {
       .force('charge', d3.forceManyBody())
       .force('collision', d3.forceCollide().radius(this.collisionRadius))
       .on('tick', () => {
-        nodes.attr('transform', node => {
-          const x = boundedX(
-            node,
-            this.config.node.width,
-            this.nodeWidthHalf,
-            width
-          )
-          const y = boundedY(node)
-          node.x = x
-          node.y = y
-          return `translate(${x} ${y})`
-        })
-        this.moveLinksOnTick(finalPath, false)
-        this.moveLinksOnTick(initialPath, true)
+        this.updateNodes(this.nodesG, tooltip)
+        this.updateLinks(this.linksG)
         // Increase the height of the SVG to fit its contents.
         const bBox = this.svg.getBBox()
         const graphHeight = bBox.y + bBox.height
@@ -125,7 +105,7 @@ export default class TreeWareNetworkGraph extends Vue {
       .style('opacity', 0)
   }
 
-  private initializeMarkersAsDefs(svgElement: SVGElement) {
+  private createArrowheadDefinitions(svgElement: SVGElement) {
     d3.select(svgElement)
       .append('defs')
       .selectAll('marker')
@@ -144,24 +124,47 @@ export default class TreeWareNetworkGraph extends Vue {
       .attr('d', 'M0,-3L10,0L0,3')
   }
 
-  private createPath(
-    linksG: SVGElement,
-    pathId: string,
-    createMarker: boolean
-  ) {
-    const path = d3
+  private updateLinks(linksG: SVGGElement) {
+    const links = d3
       .select(linksG)
-      .selectAll<SVGLineElement, SimLink>(`#${pathId}`)
-      .data(this.simLinks, getLinkId)
-      .join('path')
-      .style('stroke', d => d.linkColor)
-      .style('fill', 'none')
-      .attr('id', pathId)
-    if (createMarker) path.attr('marker-end', d => `url(#${d.linkColor})`)
-    return path
+      .selectAll<SVGGElement, SimLink>('g')
+      .data(this.simLinks, d => d.id)
+      .join(
+        enter => {
+          const linkG = enter
+            .append('g')
+            .style('stroke', d => d.linkColor)
+            .style('fill', 'none')
+          const linkStart = linkG.append('path').attr('class', 'link-start')
+          linkStart.attr('marker-end', d => `url(#${d.linkColor})`)
+          const linkEnd = linkG.append('path').attr('class', 'link-end')
+          return linkG
+        },
+        update => {
+          // updateLinkArc() computes and sets the `d` attribute for two paths
+          // that make up a single link. So each() is used for accessing each
+          // link group separately, accessing each path in that link group,
+          // and passing both paths to updateLinkArc().
+          // TODO(deepak-nulu): is there an idiomatic way of doing this in d3?
+          update.each(
+            (
+              d: SimLink,
+              index: number,
+              links: SVGGElement[] | ArrayLike<SVGGElement>
+            ) => {
+              const linkG = d3.select<SVGGElement, SimLink>(links[index])
+              const linkStart = linkG.select<SVGPathElement>('.link-start')
+              const linkEnd = linkG.select<SVGPathElement>('.link-end')
+              this.updateLinkArc(d, linkStart, linkEnd)
+            }
+          )
+          return update
+        },
+        exit => exit.remove()
+      )
   }
 
-  private createNodes(
+  private updateNodes(
     nodesG: SVGGElement,
     tooltip: d3.Selection<HTMLDivElement, unknown, HTMLElement, any>
   ) {
@@ -190,7 +193,22 @@ export default class TreeWareNetworkGraph extends Vue {
           this.config.renderNodeContent(this.config.node, nodeContent)
           return node
         },
-        update => update,
+        update => {
+          const width = this.svg.clientWidth
+          update.attr('transform', (node: SimNode) => {
+            const x = boundedX(
+              node,
+              this.config.node.width,
+              this.nodeWidthHalf,
+              width
+            )
+            const y = boundedY(node)
+            node.x = x
+            node.y = y
+            return `translate(${x} ${y})`
+          })
+          return update
+        },
         exit => exit.remove()
       )
     return this.linkTooltipToSvgSvgElement(nodes, tooltip)
@@ -218,19 +236,11 @@ export default class TreeWareNetworkGraph extends Vue {
       })
   }
 
-  private moveLinksOnTick(
-    path: d3.Selection<
-      SVGLineElement | SVGPathElement,
-      SimLink,
-      SVGElement,
-      unknown
-    >,
-    isInitial: boolean
+  private updateLinkArc(
+    d: SimLink,
+    linkStart: d3.Selection<SVGPathElement, SimLink, null, undefined>,
+    linkEnd: d3.Selection<SVGPathElement, SimLink, null, undefined>
   ) {
-    path.attr('d', d => this.getLinkArc(d, isInitial))
-  }
-
-  private getLinkArc(d: SimLink, isInitial: boolean): string {
     // Set the source of the link to the middle of the right edge of the node.
     let sourceX = (d.source.x || 0) + this.config.node.width
     let sourceY = (d.source.y || 0) + this.nodeHeightHalf
@@ -264,9 +274,14 @@ export default class TreeWareNetworkGraph extends Vue {
     endX = endX + (dy * len) / dr
     endY = endY + (-dx * len) / dr
 
-    if (isInitial)
-      return generateArcDefinitionString(sourceX, sourceY, dr, endX, endY)
-    else return generateArcDefinitionString(endX, endY, dr, targetX, targetY)
+    linkStart.attr(
+      'd',
+      generateArcDefinitionString(sourceX, sourceY, dr, endX, endY)
+    )
+    linkEnd.attr(
+      'd',
+      generateArcDefinitionString(endX, endY, dr, targetX, targetY)
+    )
   }
 
   private populateLinksColors() {
@@ -344,6 +359,7 @@ function toSim(graph: Graph): [SimNode[], SimLink[]] {
     if (!target.isInternal) target.nodeType = NodeType.EGRESS
     // TODO(deepak-nulu): handle the case where an external node is both ingress and egress.
     return {
+      id: getLinkId(source, target, link.linkType),
       source,
       target,
       linkColor: link.linkColor,
@@ -354,8 +370,8 @@ function toSim(graph: Graph): [SimNode[], SimLink[]] {
   return [simNodes, simLinks]
 }
 
-function getLinkId(link: SimLink): string {
-  return `${link.source.id}->${link.target.id}:${link.linkType}`
+function getLinkId(source: SimNode, target: SimNode, linkType: string): string {
+  return `${source.id}->${target.id}:${linkType}`
 }
 
 function generateArcDefinitionString(

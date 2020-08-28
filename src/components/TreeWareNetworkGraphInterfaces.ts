@@ -47,6 +47,7 @@ export interface SimNode extends d3.SimulationNodeDatum {
 }
 
 export interface SimLink extends d3.SimulationLinkDatum<SimNode> {
+  id: string
   source: SimNode
   target: SimNode
   linkColor: string
