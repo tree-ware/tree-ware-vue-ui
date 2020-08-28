@@ -32,7 +32,7 @@ export default class TreeWareNetworkGraph extends Vue {
   @Prop() readonly config!: NetworkGraphConfig
   @Prop() readonly graph!: Graph
 
-  @Ref() readonly svg!: SVGElement
+  @Ref() readonly svg!: SVGSVGElement
   @Ref() readonly linksG!: SVGGElement
   @Ref() readonly nodesG!: SVGGElement
 
@@ -70,7 +70,6 @@ export default class TreeWareNetworkGraph extends Vue {
 
   private draw() {
     const width = this.svg.clientWidth
-    const height = this.svg.clientHeight
     ;[this.simNodes, this.simLinks] = toSim(this.graph)
 
     // Create the defs for the markers
@@ -95,7 +94,6 @@ export default class TreeWareNetworkGraph extends Vue {
           .links(this.simLinks)
       )
       .force('charge', d3.forceManyBody())
-      .force('center', d3.forceCenter(width / 2, height / 2))
       .force('collision', d3.forceCollide().radius(this.collisionRadius))
       .on('tick', () => {
         nodes.attr('transform', node => {
@@ -105,18 +103,17 @@ export default class TreeWareNetworkGraph extends Vue {
             this.nodeWidthHalf,
             width
           )
-          const y = boundedY(
-            node,
-            this.config.node.height,
-            this.nodeHeightHalf,
-            height
-          )
+          const y = boundedY(node)
           node.x = x
           node.y = y
           return `translate(${x} ${y})`
         })
         this.moveLinksOnTick(finalPath, false)
         this.moveLinksOnTick(initialPath, true)
+        // Increase the height of the SVG to fit its contents.
+        const bBox = this.svg.getBBox()
+        const graphHeight = bBox.y + bBox.height
+        this.svg.setAttribute('height', graphHeight.toString())
       })
   }
 
@@ -324,21 +321,9 @@ function boundedX(
   }
 }
 
-/**
- * @returns the bounded value of `node.y`.
- */
-function boundedY(
-  node: SimNode,
-  nodeHeight: number,
-  nodeHeightHalf: number,
-  graphHeight: number
-): number {
-  const nodeY = node.y || 0
-  const minimum = nodeHeightHalf
-  const maximum = graphHeight - nodeHeight
-  if (nodeY < minimum) return minimum
-  if (nodeY > maximum) return maximum
-  return nodeY
+/** Returns 0 if node y-value is negative, else return node y-value */
+function boundedY(node: SimNode): number {
+  return Math.max(node.y || 0, 0)
 }
 
 function toSim(graph: Graph): [SimNode[], SimLink[]] {
