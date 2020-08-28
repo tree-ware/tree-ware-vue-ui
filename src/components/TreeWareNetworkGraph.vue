@@ -168,8 +168,8 @@ export default class TreeWareNetworkGraph extends Vue {
     const nodeConfig = this.config.node
     const nodes = d3
       .select(nodesG)
-      .selectAll<SVGGElement, Node>('g')
-      .data(this.simNodes, (node: Node) => node.id)
+      .selectAll<SVGGElement, SimNode>('g')
+      .data(this.simNodes, (node: SimNode) => node.id)
       .join(
         enter => {
           const node = enter.append('g')
@@ -318,6 +318,8 @@ function boundedX(
     case NodeType.EGRESS: {
       return width - nodeWidth
     }
+    default:
+      return 0
   }
 }
 
@@ -327,26 +329,29 @@ function boundedY(node: SimNode): number {
 }
 
 function toSim(graph: Graph): [SimNode[], SimLink[]] {
-  const simNodes: SimNode[] = graph.nodes.map(node => {
-    return node
-  })
+  const simNodes: SimNode[] = graph.nodes.map(node => ({
+    ...node,
+    nodeType: node.isInternal ? NodeType.INTERNAL : NodeType.NONE
+  }))
   const simNodeMap: SimNodeMap = {}
   simNodes.forEach(node => {
     simNodeMap[node.id] = node
   })
-  const simLinks: SimLink[] = graph.links.map(link => ({
-    source: getSimNode(link.sourceId, simNodeMap),
-    target: getSimNode(link.targetId, simNodeMap),
-    linkColor: link.linkColor,
-    linkType: link.linkType,
-    classes: link.classes
-  }))
+  const simLinks: SimLink[] = graph.links.map(link => {
+    const source = simNodeMap[link.sourceId]
+    const target = simNodeMap[link.targetId]
+    if (!source.isInternal) source.nodeType = NodeType.INGRESS
+    if (!target.isInternal) target.nodeType = NodeType.EGRESS
+    // TODO(deepak-nulu): handle the case where an external node is both ingress and egress.
+    return {
+      source,
+      target,
+      linkColor: link.linkColor,
+      linkType: link.linkType,
+      classes: link.classes
+    }
+  })
   return [simNodes, simLinks]
-}
-
-function getSimNode(nodeId: string, simNodeMap: SimNodeMap): SimNode {
-  let simNode = simNodeMap[nodeId]
-  return simNode
 }
 
 function getLinkId(link: SimLink): string {

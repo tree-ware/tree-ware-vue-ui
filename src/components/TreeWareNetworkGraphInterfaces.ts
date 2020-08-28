@@ -20,7 +20,7 @@ export interface Node {
   id: string
   name: string
   tooltipText: string
-  nodeType: NodeType
+  isInternal: boolean
   classes?: string
 }
 
@@ -41,6 +41,7 @@ export interface SimNode extends d3.SimulationNodeDatum {
   id: string
   name: string
   tooltipText: string
+  isInternal: boolean
   nodeType: NodeType
   classes?: string
 }
