@@ -18,7 +18,7 @@ import {
   SimLink,
   SimNode
 } from './TreeWareNetworkGraphInterfaces'
-import { NodeType } from './TreeWareNetworkGraphTypes'
+import { NodeType, MAX_NODE_TYPE_VALUE } from './TreeWareNetworkGraphTypes'
 
 const NODE_BORDER_WIDTH = 1
 const NODE_PADDING = 10
@@ -76,6 +76,25 @@ export default class TreeWareNetworkGraph extends Vue {
     // Initialize tooltip element
     const tooltip = this.appendTooltipElementToBody()
 
+    this.staticLayout(tooltip)
+  }
+
+  private staticLayout(
+    tooltip: d3.Selection<HTMLDivElement, unknown, HTMLElement, any>
+  ) {
+    const deltaY = this.config.node.height + this.config.node.margin
+    // An array of y-values for each combination of NodeType flags.
+    let y = new Array<number>(MAX_NODE_TYPE_VALUE)
+    this.simNodes.forEach(node => {
+      node.y = y[node.nodeType] ?? 0
+      y[node.nodeType] = node.y + deltaY
+    })
+    this.updateGraph(tooltip)
+  }
+
+  private forceLayout(
+    tooltip: d3.Selection<HTMLDivElement, unknown, HTMLElement, any>
+  ) {
     // Define forces on the graph
     d3.forceSimulation(this.simNodes)
       .force(
@@ -88,13 +107,19 @@ export default class TreeWareNetworkGraph extends Vue {
       .force('charge', d3.forceManyBody())
       .force('collision', d3.forceCollide().radius(this.collisionRadius))
       .on('tick', () => {
-        this.updateNodes(this.nodesG, tooltip)
-        this.updateLinks(this.linksG)
-        // Increase the height of the SVG to fit its contents.
-        const bBox = this.svg.getBBox()
-        const graphHeight = bBox.y + bBox.height
-        this.svg.setAttribute('height', graphHeight.toString())
+        this.updateGraph(tooltip)
       })
+  }
+
+  private updateGraph(
+    tooltip: d3.Selection<HTMLDivElement, unknown, HTMLElement, any>
+  ) {
+    this.updateNodes(this.nodesG, tooltip)
+    this.updateLinks(this.linksG)
+    // Increase the height of the SVG to fit its contents.
+    const bBox = this.svg.getBBox()
+    const graphHeight = bBox.y + bBox.height
+    this.svg.setAttribute('height', graphHeight.toString())
   }
 
   private appendTooltipElementToBody() {
@@ -358,10 +383,12 @@ function boundedY(node: SimNode): number {
 }
 
 function toSim(graph: Graph): [SimNode[], SimLink[]] {
-  const simNodes: SimNode[] = graph.nodes.map(node => ({
-    ...node,
-    nodeType: node.isInternal ? NodeType.INTERNAL : NodeType.NONE
-  }))
+  const simNodes: SimNode[] = graph.nodes
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map(node => ({
+      ...node,
+      nodeType: node.isInternal ? NodeType.INTERNAL : NodeType.NONE
+    }))
   const simNodeMap: SimNodeMap = {}
   simNodes.forEach(node => {
     simNodeMap[node.id] = node

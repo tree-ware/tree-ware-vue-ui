@@ -4,6 +4,7 @@ import { NodeType } from './TreeWareNetworkGraphTypes'
 export interface NetworkGraphNodeConfig {
   width: number
   height: number
+  margin: number
   borderWidth: number
   padding: number
 }
