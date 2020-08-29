@@ -258,29 +258,43 @@ export default class TreeWareNetworkGraph extends Vue {
       if (sourceY < targetY) targetX += this.config.node.width
       else sourceX -= this.config.node.width
     }
-    const dx = targetX - sourceX,
-      dy = targetY - sourceY,
-      dr = Math.sqrt(dx * dx + dy * dy)
+
+    const dx = targetX - sourceX
+    let midX = (targetX + sourceX) / 2
+    let midY = (targetY + sourceY) / 2
+    if (dx !== 0) {
+      // Use a straight arrow when the source and target horizontally spread.
+      linkStart.attr(
+        'd',
+        generateLineDefinitionString(sourceX, sourceY, midX, midY)
+      )
+      linkEnd.attr(
+        'd',
+        generateLineDefinitionString(midX, midY, targetX, targetY)
+      )
+      return
+    }
+
+    const dy = targetY - sourceY
+    const dr = Math.sqrt(dx * dx + dy * dy)
 
     // for len - 30-60-90 triangle rule, trig to calculate mid points
-    let len = dr - (dr / 2) * Math.sqrt(3),
-      endX = (targetX + sourceX) / 2,
-      endY = (targetY + sourceY) / 2
+    let len = dr - (dr / 2) * Math.sqrt(3)
 
     const index = this.linkTypes.indexOf(d.linkType)
     if (index !== -1) {
-      endY += index * LINKS_GAP
+      midY += index * LINKS_GAP
     }
-    endX = endX + (dy * len) / dr
-    endY = endY + (-dx * len) / dr
+    midX = midX + (dy * len) / dr
+    midY = midY + (-dx * len) / dr
 
     linkStart.attr(
       'd',
-      generateArcDefinitionString(sourceX, sourceY, dr, endX, endY)
+      generateArcDefinitionString(sourceX, sourceY, dr, midX, midY)
     )
     linkEnd.attr(
       'd',
-      generateArcDefinitionString(endX, endY, dr, targetX, targetY)
+      generateArcDefinitionString(midX, midY, dr, targetX, targetY)
     )
   }
 
@@ -374,6 +388,15 @@ function getLinkId(source: SimNode, target: SimNode, linkType: string): string {
   return `${source.id}->${target.id}:${linkType}`
 }
 
+function generateLineDefinitionString(
+  sourceX: number,
+  sourceY: number,
+  targetX: number,
+  targetY: Number
+): string {
+  return 'M' + sourceX + ',' + sourceY + 'L' + targetX + ',' + targetY
+}
+
 function generateArcDefinitionString(
   sourceX: number,
   sourceY: number,
@@ -381,11 +404,6 @@ function generateArcDefinitionString(
   targetX: number,
   targetY: Number
 ): string {
-  sourceX = sourceX || 0
-  sourceY = sourceY || 0
-  radius = radius || 0
-  targetX = targetX || 0
-  targetY = targetY || 0
   return (
     'M' +
     sourceX +
