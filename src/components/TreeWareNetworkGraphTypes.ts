@@ -5,6 +5,11 @@ export enum NodeType {
   EGRESS = 1 << 2
 }
 
+export enum LinkShape {
+  CURVED_IF_NEEDED,
+  CURVED_ALWAYS
+}
+
 /** The maximum value when all NodeType flags are combined. */
 export const MAX_NODE_TYPE_VALUE = Object.values(NodeType).reduce(
   (previous: number, value: string | NodeType) => {

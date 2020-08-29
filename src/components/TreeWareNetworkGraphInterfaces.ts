@@ -1,5 +1,5 @@
 import * as d3 from 'd3'
-import { NodeType } from './TreeWareNetworkGraphTypes'
+import { LinkShape, NodeType } from './TreeWareNetworkGraphTypes'
 
 export interface NetworkGraphNodeConfig {
   width: number
@@ -9,8 +9,13 @@ export interface NetworkGraphNodeConfig {
   padding: number
 }
 
+export interface NetworkGraphLinkConfig {
+  shape: LinkShape
+}
+
 export interface NetworkGraphConfig {
   node: NetworkGraphNodeConfig
+  link: NetworkGraphLinkConfig
   renderNodeContent: (
     config: NetworkGraphNodeConfig,
     node: d3.Selection<SVGSVGElement, SimNode, SVGGElement, unknown>

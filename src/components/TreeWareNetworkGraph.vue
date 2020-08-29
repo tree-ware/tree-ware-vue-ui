@@ -18,7 +18,11 @@ import {
   SimLink,
   SimNode
 } from './TreeWareNetworkGraphInterfaces'
-import { NodeType, MAX_NODE_TYPE_VALUE } from './TreeWareNetworkGraphTypes'
+import {
+  LinkShape,
+  NodeType,
+  MAX_NODE_TYPE_VALUE
+} from './TreeWareNetworkGraphTypes'
 
 const NODE_BORDER_WIDTH = 1
 const NODE_PADDING = 10
@@ -287,7 +291,8 @@ export default class TreeWareNetworkGraph extends Vue {
     const dx = targetX - sourceX
     let midX = (targetX + sourceX) / 2
     let midY = (targetY + sourceY) / 2
-    if (dx !== 0) {
+
+    if (this.config.link.shape === LinkShape.CURVED_IF_NEEDED && dx !== 0) {
       // Use a straight arrow when the source and target horizontally spread.
       linkStart.attr(
         'd',
