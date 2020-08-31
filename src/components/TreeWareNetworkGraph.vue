@@ -87,11 +87,23 @@ export default class TreeWareNetworkGraph extends Vue {
     tooltip: d3.Selection<HTMLDivElement, unknown, HTMLElement, any>
   ) {
     const deltaY = this.config.node.height + this.config.node.margin
-    // An array of y-values for each combination of NodeType flags.
-    let y = new Array<number>(MAX_NODE_TYPE_VALUE)
+    // An array of y-values for the columns. The 3 internal columns are treated
+    // as 1 with respect to the y-axis.
+    const y = new Array<number>(3)
+    let yIndex = 0
     this.simNodes.forEach(node => {
-      node.y = y[node.nodeType] ?? 0
-      y[node.nodeType] = node.y + deltaY
+      switch (node.nodeType) {
+        case NodeType.INGRESS:
+          yIndex = 0
+          break
+        case NodeType.EGRESS:
+          yIndex = 2
+          break
+        default:
+          yIndex = 1
+      }
+      node.y = y[yIndex] ?? 0
+      y[yIndex] = node.y + deltaY
     })
     this.updateGraph(tooltip)
   }
@@ -224,13 +236,9 @@ export default class TreeWareNetworkGraph extends Vue {
         },
         update => {
           const width = this.svg.clientWidth
+          this.updateColumnX(width)
           update.attr('transform', (node: SimNode) => {
-            const x = boundedX(
-              node,
-              this.config.node.width,
-              this.nodeWidthHalf,
-              width
-            )
+            const x = this.boundedX(node)
             const y = boundedY(node)
             node.x = x
             node.y = y
@@ -280,10 +288,7 @@ export default class TreeWareNetworkGraph extends Vue {
     // For internal nodes, the links should be on the right edge if the source
     // is above the target, and on the left edge if the source is below the
     // target.
-    if (
-      d.source.nodeType === NodeType.INTERNAL &&
-      d.target.nodeType === NodeType.INTERNAL
-    ) {
+    if (d.source.isInternal && d.target.isInternal) {
       if (sourceY < targetY) targetX += this.config.node.width
       else sourceX -= this.config.node.width
     }
@@ -342,10 +347,40 @@ export default class TreeWareNetworkGraph extends Vue {
     })
   }
 
+  private updateColumnX(width: number) {
+    // 3 columns for internal nodes did not work out as expected. So using only
+    // 1 column for internal nodes.
+    const columnCount = 3
+    const nodeWidth = this.config.node.width
+    const gap = (width - nodeWidth * columnCount) / (columnCount - 1)
+
+    this.columnX[NodeType.INGRESS] = 0
+
+    // All ingress nodes in the same column
+    let nextColumn = nodeWidth + gap
+    this.columnX[NodeType.INTERNAL | NodeType.INGRESS] = nextColumn
+    this.columnX[
+      NodeType.INTERNAL | NodeType.INGRESS | NodeType.EGRESS
+    ] = nextColumn
+    this.columnX[NodeType.INTERNAL] = nextColumn
+    this.columnX[NodeType.INTERNAL | NodeType.EGRESS] = nextColumn
+
+    nextColumn += nodeWidth + gap
+    this.columnX[NodeType.EGRESS] = nextColumn
+  }
+
+  /** Determines x-value based on node-type */
+  private boundedX(node: SimNode): number {
+    return this.columnX[node.nodeType]
+  }
+
   private nodeWidthHalf: number = 0
   private nodeHeightHalf: number = 0
   private nodeBorderWidthDouble: number = 0
   private nodePaddingDouble: number = 0
+
+  /** x-values for the nodes in each column */
+  private columnX = new Array<number>(MAX_NODE_TYPE_VALUE).fill(0)
 
   private collisionRadius: number = 0
 
@@ -353,33 +388,6 @@ export default class TreeWareNetworkGraph extends Vue {
   private simLinks: SimLink[] = []
   private linkColors: string[] = []
   private linkTypes: string[] = []
-}
-/**
- For ingress nodes - position towards left edge
- For internal nodes - position at the center
- For egress nodes - position towards the right edge
-
- @returns the bounded value of `node.x`.
- */
-function boundedX(
-  node: SimNode,
-  nodeWidth: number,
-  nodeWidthHalf: number,
-  width: number
-): number {
-  switch (node.nodeType) {
-    case NodeType.INGRESS: {
-      return 0
-    }
-    case NodeType.INTERNAL: {
-      return width / 2 - nodeWidthHalf
-    }
-    case NodeType.EGRESS: {
-      return width - nodeWidth
-    }
-    default:
-      return 0
-  }
 }
 
 /** Returns 0 if node y-value is negative, else return node y-value */
@@ -401,8 +409,14 @@ function toSim(graph: Graph): [SimNode[], SimLink[]] {
   const simLinks: SimLink[] = graph.links.map(link => {
     const source = simNodeMap[link.sourceId]
     const target = simNodeMap[link.targetId]
-    if (!source.isInternal) source.nodeType = NodeType.INGRESS
-    if (!target.isInternal) target.nodeType = NodeType.EGRESS
+    if (!source.isInternal) {
+      source.nodeType = NodeType.INGRESS
+      if (target.isInternal) target.nodeType |= NodeType.INGRESS
+    }
+    if (!target.isInternal) {
+      target.nodeType = NodeType.EGRESS
+      if (source.isInternal) source.nodeType |= NodeType.EGRESS
+    }
     // TODO(deepak-nulu): handle the case where an external node is both ingress and egress.
     return {
       id: getLinkId(source, target, link.linkType),
