@@ -86,6 +86,8 @@ export default class TreeWareNetworkGraph extends Vue {
   private staticLayout(
     tooltip: d3.Selection<HTMLDivElement, unknown, HTMLElement, any>
   ) {
+    // Sort the nodes by name so that they are easier to find.
+    this.simNodes.sort((a, b) => a.name.localeCompare(b.name))
     const deltaY = this.config.node.height + this.config.node.margin
     // An array of y-values for the columns. The 3 internal columns are treated
     // as 1 with respect to the y-axis.
@@ -396,12 +398,10 @@ function boundedY(node: SimNode): number {
 }
 
 function toSim(graph: Graph): [SimNode[], SimLink[]] {
-  const simNodes: SimNode[] = graph.nodes
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .map(node => ({
-      ...node,
-      nodeType: node.isInternal ? NodeType.INTERNAL : NodeType.NONE
-    }))
+  const simNodes: SimNode[] = graph.nodes.map(node => ({
+    ...node,
+    nodeType: node.isInternal ? NodeType.INTERNAL : NodeType.NONE
+  }))
   const simNodeMap: SimNodeMap = {}
   simNodes.forEach(node => {
     simNodeMap[node.id] = node
