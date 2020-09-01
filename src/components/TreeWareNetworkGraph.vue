@@ -183,27 +183,25 @@ export default class TreeWareNetworkGraph extends Vue {
           const linkEnd = linkG.append('path').attr('class', 'link-end')
           return linkG
         },
-        update => {
-          // updateLinkArc() computes and sets the `d` attribute for two paths
-          // that make up a single link. So each() is used for accessing each
-          // link group separately, accessing each path in that link group,
-          // and passing both paths to updateLinkArc().
-          // TODO(deepak-nulu): is there an idiomatic way of doing this in d3?
-          update.each(
-            (
-              d: SimLink,
-              index: number,
-              links: SVGGElement[] | ArrayLike<SVGGElement>
-            ) => {
-              const linkG = d3.select<SVGGElement, SimLink>(links[index])
-              const linkStart = linkG.select<SVGPathElement>('.link-start')
-              const linkEnd = linkG.select<SVGPathElement>('.link-end')
-              this.updateLinkArc(d, linkStart, linkEnd)
-            }
-          )
-          return update
-        },
+        update => update,
         exit => exit.remove()
+      )
+      // updateLinkArc() computes and sets the `d` attribute for two paths
+      // that make up a single link. So each() is used for accessing each
+      // link group separately, accessing each path in that link group,
+      // and passing both paths to updateLinkArc().
+      // TODO(deepak-nulu): is there an idiomatic way of doing this in d3?
+      .each(
+        (
+          d: SimLink,
+          index: number,
+          links: SVGGElement[] | ArrayLike<SVGGElement>
+        ) => {
+          const linkG = d3.select<SVGGElement, SimLink>(links[index])
+          const linkStart = linkG.select<SVGPathElement>('.link-start')
+          const linkEnd = linkG.select<SVGPathElement>('.link-end')
+          this.updateLinkArc(d, linkStart, linkEnd)
+        }
       )
   }
 
@@ -212,6 +210,8 @@ export default class TreeWareNetworkGraph extends Vue {
     tooltip: d3.Selection<HTMLDivElement, unknown, HTMLElement, any>
   ) {
     const nodeConfig = this.config.node
+    const width = this.svg.clientWidth
+    this.updateColumnX(width)
     const nodes = d3
       .select(nodesG)
       .selectAll<SVGGElement, SimNode>('g')
@@ -236,20 +236,16 @@ export default class TreeWareNetworkGraph extends Vue {
           this.config.renderNodeContent(this.config.node, nodeContent)
           return node
         },
-        update => {
-          const width = this.svg.clientWidth
-          this.updateColumnX(width)
-          update.attr('transform', (node: SimNode) => {
-            const x = this.boundedX(node)
-            const y = boundedY(node)
-            node.x = x
-            node.y = y
-            return `translate(${x} ${y})`
-          })
-          return update
-        },
+        update => update,
         exit => exit.remove()
       )
+      .attr('transform', (node: SimNode) => {
+        const x = this.boundedX(node)
+        const y = boundedY(node)
+        node.x = x
+        node.y = y
+        return `translate(${x} ${y})`
+      })
     return this.linkTooltipToSvgSvgElement(nodes, tooltip)
   }
 
