@@ -35,6 +35,7 @@ export type SimNodeMap = { [nodeId: string]: SimNode }
 export default class TreeWareNetworkGraph extends Vue {
   @Prop() readonly config!: NetworkGraphConfig
   @Prop() readonly graph!: Graph
+  @Prop({ default: false }) readonly redrawOnWindowResize!: boolean
 
   @Ref() readonly svg!: SVGSVGElement
   @Ref() readonly linksG!: SVGGElement
@@ -51,8 +52,6 @@ export default class TreeWareNetworkGraph extends Vue {
         return
       }
     }
-    this.populateLinkTypes()
-    this.populateLinksColors()
     this.draw()
   }
 
@@ -67,18 +66,23 @@ export default class TreeWareNetworkGraph extends Vue {
   }
 
   mounted() {
+    if (this.redrawOnWindowResize) {
+      window.addEventListener('resize', this.updateGraph)
+    }
     this.tooltip = appendTooltipElementToBody()
-    this.populateLinkTypes()
-    this.populateLinksColors()
     this.draw()
   }
 
+  beforeDestroy() {
+    if (this.redrawOnWindowResize) {
+      window.removeEventListener('resize', this.updateGraph)
+    }
+  }
+
   private draw() {
-    const width = this.svg.clientWidth
-    ;[this.simNodes, this.simLinks] = toSim(this.graph)
-
+    this.populateLinkColorsAndTypes()
     this.createArrowheadDefinitions(this.svg)
-
+    ;[this.simNodes, this.simLinks] = toSim(this.graph)
     this.staticLayout()
   }
 
@@ -312,17 +316,16 @@ export default class TreeWareNetworkGraph extends Vue {
     )
   }
 
-  private populateLinksColors() {
+  private populateLinkColorsAndTypes() {
+    this.linkColors = []
+    this.linkTypes = []
     this.graph.links.forEach(it => {
-      if (!this.linkColors.includes(it.linkColor))
+      if (!this.linkColors.includes(it.linkColor)) {
         this.linkColors.push(it.linkColor)
-    })
-  }
-
-  private populateLinkTypes() {
-    this.graph.links.forEach(it => {
-      if (!this.linkTypes.includes(it.linkType))
+      }
+      if (!this.linkTypes.includes(it.linkType)) {
         this.linkTypes.push(it.linkType)
+      }
     })
   }
 
