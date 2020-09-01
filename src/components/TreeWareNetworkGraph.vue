@@ -67,6 +67,7 @@ export default class TreeWareNetworkGraph extends Vue {
   }
 
   mounted() {
+    this.tooltip = appendTooltipElementToBody()
     this.populateLinkTypes()
     this.populateLinksColors()
     this.draw()
@@ -77,15 +78,11 @@ export default class TreeWareNetworkGraph extends Vue {
     ;[this.simNodes, this.simLinks] = toSim(this.graph)
 
     this.createArrowheadDefinitions(this.svg)
-    // Initialize tooltip element
-    const tooltip = this.appendTooltipElementToBody()
 
-    this.staticLayout(tooltip)
+    this.staticLayout()
   }
 
-  private staticLayout(
-    tooltip: d3.Selection<HTMLDivElement, unknown, HTMLElement, any>
-  ) {
+  private staticLayout() {
     // Sort the nodes by name so that they are easier to find.
     this.simNodes.sort((a, b) => a.name.localeCompare(b.name))
     const deltaY = this.config.node.height + this.config.node.margin
@@ -107,12 +104,10 @@ export default class TreeWareNetworkGraph extends Vue {
       node.y = y[yIndex] ?? 0
       y[yIndex] = node.y + deltaY
     })
-    this.updateGraph(tooltip)
+    this.updateGraph()
   }
 
-  private forceLayout(
-    tooltip: d3.Selection<HTMLDivElement, unknown, HTMLElement, any>
-  ) {
+  private forceLayout() {
     // Define forces on the graph
     d3.forceSimulation(this.simNodes)
       .force(
@@ -125,27 +120,17 @@ export default class TreeWareNetworkGraph extends Vue {
       .force('charge', d3.forceManyBody())
       .force('collision', d3.forceCollide().radius(this.collisionRadius))
       .on('tick', () => {
-        this.updateGraph(tooltip)
+        this.updateGraph()
       })
   }
 
-  private updateGraph(
-    tooltip: d3.Selection<HTMLDivElement, unknown, HTMLElement, any>
-  ) {
-    this.updateNodes(this.nodesG, tooltip)
+  private updateGraph() {
+    this.updateNodes(this.nodesG)
     this.updateLinks(this.linksG)
     // Increase the height of the SVG to fit its contents.
     const bBox = this.svg.getBBox()
     const graphHeight = bBox.y + bBox.height
     this.svg.setAttribute('height', graphHeight.toString())
-  }
-
-  private appendTooltipElementToBody() {
-    return d3
-      .select('body')
-      .append('div')
-      .attr('class', 'tooltip')
-      .style('opacity', 0)
   }
 
   private createArrowheadDefinitions(svgElement: SVGElement) {
@@ -205,10 +190,7 @@ export default class TreeWareNetworkGraph extends Vue {
       )
   }
 
-  private updateNodes(
-    nodesG: SVGGElement,
-    tooltip: d3.Selection<HTMLDivElement, unknown, HTMLElement, any>
-  ) {
+  private updateNodes(nodesG: SVGGElement) {
     const nodeConfig = this.config.node
     const width = this.svg.clientWidth
     this.updateColumnX(width)
@@ -246,26 +228,25 @@ export default class TreeWareNetworkGraph extends Vue {
         node.y = y
         return `translate(${x} ${y})`
       })
-    return this.linkTooltipToSvgSvgElement(nodes, tooltip)
+    return this.linkTooltipToSvgSvgElement(nodes)
   }
 
   private linkTooltipToSvgSvgElement(
-    nodes: d3.Selection<SVGGElement, SimNode, SVGGElement, unknown>,
-    tooltip: d3.Selection<HTMLDivElement, unknown, HTMLElement, any>
+    nodes: d3.Selection<SVGGElement, SimNode, SVGGElement, unknown>
   ) {
     return nodes
       .on('mouseover.tooltip', d => {
-        tooltip.transition().duration(300).style('opacity', 1.0)
-        tooltip
+        this.tooltip.transition().duration(300).style('opacity', 1.0)
+        this.tooltip
           .html(d.tooltipText)
           .style('left', d3.event.pageX + 'px')
           .style('top', d3.event.pageY + 10 + 'px')
       })
-      .on('mouseout.tooltip', function () {
-        tooltip.transition().duration(100).style('opacity', 0)
+      .on('mouseout.tooltip', () => {
+        this.tooltip.transition().duration(100).style('opacity', 0)
       })
-      .on('mousemove', function () {
-        tooltip
+      .on('mousemove', () => {
+        this.tooltip
           .style('left', d3.event.pageX + 'px')
           .style('top', d3.event.pageY + 10 + 'px')
       })
@@ -386,6 +367,17 @@ export default class TreeWareNetworkGraph extends Vue {
   private simLinks: SimLink[] = []
   private linkColors: string[] = []
   private linkTypes: string[] = []
+
+  private tooltip!: d3.Selection<HTMLDivElement, number, HTMLElement, any>
+}
+
+function appendTooltipElementToBody() {
+  return d3
+    .selectAll<HTMLDivElement, number>('.tree-ware-network-graph-tooltip')
+    .data([0]) // dummy data for creating a single tooltip div
+    .join<HTMLDivElement, number>('div')
+    .attr('class', 'tree-ware-network-graph-tooltip')
+    .style('opacity', 0)
 }
 
 /** Returns 0 if node y-value is negative, else return node y-value */
@@ -477,7 +469,7 @@ $padding: 4px;
   }
 }
 
-.tooltip {
+.tree-ware-network-graph-tooltip {
   position: absolute;
   max-width: $tooltip-max-width;
   height: auto;
