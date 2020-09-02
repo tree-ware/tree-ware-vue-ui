@@ -13,50 +13,46 @@ export interface NetworkGraphLinkConfig {
   shape: LinkShape
 }
 
-export interface NetworkGraphConfig {
+export interface NetworkGraphConfig<N> {
   node: NetworkGraphNodeConfig
   link: NetworkGraphLinkConfig
   renderNodeContent: (
     config: NetworkGraphNodeConfig,
-    node: d3.Selection<SVGSVGElement, SimNode, SVGGElement, unknown>
+    node: Node<N>,
+    nodeSvg: SVGSVGElement
   ) => void
 }
 
-export interface Node {
+export interface Node<N> {
   id: string
-  name: string
   tooltipText: string
   isInternal: boolean
+  data: N
   classes?: string
 }
 
-export interface Link {
+export interface Link<L> {
   sourceId: string
   targetId: string
   linkColor: string
   linkType: string
+  data: L
   classes?: string
 }
 
-export interface Graph {
-  nodes: Node[]
-  links: Link[]
+export interface Graph<N, L> {
+  nodes: Node<N>[]
+  links: Link<L>[]
 }
 
-export interface SimNode extends d3.SimulationNodeDatum {
-  id: string
-  name: string
-  tooltipText: string
-  isInternal: boolean
+export interface SimNode<N> extends Node<N>, d3.SimulationNodeDatum {
   nodeType: NodeType
-  classes?: string
 }
 
-export interface SimLink extends d3.SimulationLinkDatum<SimNode> {
+export interface SimLink<N, L>
+  extends Link<L>,
+    d3.SimulationLinkDatum<SimNode<N>> {
   id: string
-  source: SimNode
-  target: SimNode
-  linkColor: string
-  linkType: string
-  classes?: string
+  source: SimNode<N>
+  target: SimNode<N>
 }

@@ -29,12 +29,12 @@ const NODE_PADDING = 10
 
 const LINKS_GAP = 10
 
-export type SimNodeMap = { [nodeId: string]: SimNode }
+export type SimNodeMap<N> = { [nodeId: string]: SimNode<N> }
 
 @Component
-export default class TreeWareNetworkGraph extends Vue {
-  @Prop() readonly config!: NetworkGraphConfig
-  @Prop() readonly graph!: Graph
+export default class TreeWareNetworkGraph<N, L> extends Vue {
+  @Prop() readonly config!: NetworkGraphConfig<N>
+  @Prop() readonly graph!: Graph<N, L>
   @Prop({ default: false }) readonly redrawOnWindowResize!: boolean
 
   @Ref() readonly svg!: SVGSVGElement
@@ -42,7 +42,7 @@ export default class TreeWareNetworkGraph extends Vue {
   @Ref() readonly nodesG!: SVGGElement
 
   @Watch('graph', { deep: true })
-  graphChanged(newGraph: Graph, oldGraph: Graph) {
+  graphChanged(newGraph: Graph<N, L>, oldGraph: Graph<N, L>) {
     const nodeIdList = newGraph.nodes.map(it => it.id)
     for (let link of newGraph.links) {
       if (
@@ -87,8 +87,6 @@ export default class TreeWareNetworkGraph extends Vue {
   }
 
   private staticLayout() {
-    // Sort the nodes by name so that they are easier to find.
-    this.simNodes.sort((a, b) => a.name.localeCompare(b.name))
     const deltaY = this.config.node.height + this.config.node.margin
     // An array of y-values for the columns. The 3 internal columns are treated
     // as 1 with respect to the y-axis.
@@ -118,7 +116,7 @@ export default class TreeWareNetworkGraph extends Vue {
         'link',
         d3
           .forceLink()
-          .id(node => (node as Node).id)
+          .id(node => (node as Node<N>).id)
           .links(this.simLinks)
       )
       .force('charge', d3.forceManyBody())
@@ -159,7 +157,7 @@ export default class TreeWareNetworkGraph extends Vue {
   private updateLinks(linksG: SVGGElement) {
     const links = d3
       .select(linksG)
-      .selectAll<SVGGElement, SimLink>('g')
+      .selectAll<SVGGElement, SimLink<N, L>>('g')
       .data(this.simLinks, d => d.id)
       .join(
         enter => {
@@ -182,11 +180,11 @@ export default class TreeWareNetworkGraph extends Vue {
       // TODO(deepak-nulu): is there an idiomatic way of doing this in d3?
       .each(
         (
-          d: SimLink,
+          d: SimLink<N, L>,
           index: number,
           links: SVGGElement[] | ArrayLike<SVGGElement>
         ) => {
-          const linkG = d3.select<SVGGElement, SimLink>(links[index])
+          const linkG = d3.select<SVGGElement, SimLink<N, L>>(links[index])
           const linkStart = linkG.select<SVGPathElement>('.link-start')
           const linkEnd = linkG.select<SVGPathElement>('.link-end')
           this.updateLinkArc(d, linkStart, linkEnd)
@@ -200,8 +198,8 @@ export default class TreeWareNetworkGraph extends Vue {
     this.updateColumnX(width)
     const nodes = d3
       .select(nodesG)
-      .selectAll<SVGGElement, SimNode>('g')
-      .data(this.simNodes, (node: SimNode) => node.id)
+      .selectAll<SVGGElement, SimNode<N>>('g')
+      .data(this.simNodes, (node: SimNode<N>) => node.id)
       .join(
         enter => {
           const node = enter.append('g')
@@ -212,20 +210,28 @@ export default class TreeWareNetworkGraph extends Vue {
             .attr('y', NODE_BORDER_WIDTH)
             .attr('width', nodeConfig.width - this.nodeBorderWidthDouble)
             .attr('height', nodeConfig.height - this.nodeBorderWidthDouble)
-          const nodeContent = node
+          node
             .append('svg')
             .attr('class', 'node-content')
             .attr('x', NODE_PADDING)
             .attr('y', NODE_PADDING)
             .attr('width', nodeConfig.width - this.nodePaddingDouble)
             .attr('height', nodeConfig.height - this.nodePaddingDouble)
-          this.config.renderNodeContent(this.config.node, nodeContent)
+            .each(
+              (
+                d: SimNode<N>,
+                index: number,
+                nodes: SVGSVGElement[] | ArrayLike<SVGSVGElement>
+              ) => {
+                this.config.renderNodeContent(this.config.node, d, nodes[index])
+              }
+            )
           return node
         },
         update => update,
         exit => exit.remove()
       )
-      .attr('transform', (node: SimNode) => {
+      .attr('transform', (node: SimNode<N>) => {
         const x = this.boundedX(node)
         const y = boundedY(node)
         node.x = x
@@ -236,7 +242,7 @@ export default class TreeWareNetworkGraph extends Vue {
   }
 
   private linkTooltipToSvgSvgElement(
-    nodes: d3.Selection<SVGGElement, SimNode, SVGGElement, unknown>
+    nodes: d3.Selection<SVGGElement, SimNode<N>, SVGGElement, unknown>
   ) {
     return nodes
       .on('mouseover.tooltip', d => {
@@ -257,9 +263,9 @@ export default class TreeWareNetworkGraph extends Vue {
   }
 
   private updateLinkArc(
-    d: SimLink,
-    linkStart: d3.Selection<SVGPathElement, SimLink, null, undefined>,
-    linkEnd: d3.Selection<SVGPathElement, SimLink, null, undefined>
+    d: SimLink<N, L>,
+    linkStart: d3.Selection<SVGPathElement, SimLink<N, L>, null, undefined>,
+    linkEnd: d3.Selection<SVGPathElement, SimLink<N, L>, null, undefined>
   ) {
     // Set the source of the link to the middle of the right edge of the node.
     let sourceX = (d.source.x || 0) + this.config.node.width
@@ -352,7 +358,7 @@ export default class TreeWareNetworkGraph extends Vue {
   }
 
   /** Determines x-value based on node-type */
-  private boundedX(node: SimNode): number {
+  private boundedX(node: SimNode<N>): number {
     return this.columnX[node.nodeType]
   }
 
@@ -366,8 +372,8 @@ export default class TreeWareNetworkGraph extends Vue {
 
   private collisionRadius: number = 0
 
-  private simNodes: SimNode[] = []
-  private simLinks: SimLink[] = []
+  private simNodes: SimNode<N>[] = []
+  private simLinks: SimLink<N, L>[] = []
   private linkColors: string[] = []
   private linkTypes: string[] = []
 
@@ -384,20 +390,20 @@ function appendTooltipElementToBody() {
 }
 
 /** Returns 0 if node y-value is negative, else return node y-value */
-function boundedY(node: SimNode): number {
+function boundedY<N>(node: SimNode<N>): number {
   return Math.max(node.y || 0, 0)
 }
 
-function toSim(graph: Graph): [SimNode[], SimLink[]] {
-  const simNodes: SimNode[] = graph.nodes.map(node => ({
+function toSim<N, L>(graph: Graph<N, L>): [SimNode<N>[], SimLink<N, L>[]] {
+  const simNodes: SimNode<N>[] = graph.nodes.map(node => ({
     ...node,
     nodeType: node.isInternal ? NodeType.INTERNAL : NodeType.NONE
   }))
-  const simNodeMap: SimNodeMap = {}
+  const simNodeMap: SimNodeMap<N> = {}
   simNodes.forEach(node => {
     simNodeMap[node.id] = node
   })
-  const simLinks: SimLink[] = graph.links.map(link => {
+  const simLinks: SimLink<N, L>[] = graph.links.map(link => {
     const source = simNodeMap[link.sourceId]
     const target = simNodeMap[link.targetId]
     if (!source.isInternal) {
@@ -410,18 +416,20 @@ function toSim(graph: Graph): [SimNode[], SimLink[]] {
     }
     // TODO(deepak-nulu): handle the case where an external node is both ingress and egress.
     return {
+      ...link,
       id: getLinkId(source, target, link.linkType),
       source,
-      target,
-      linkColor: link.linkColor,
-      linkType: link.linkType,
-      classes: link.classes
+      target
     }
   })
   return [simNodes, simLinks]
 }
 
-function getLinkId(source: SimNode, target: SimNode, linkType: string): string {
+function getLinkId<N>(
+  source: SimNode<N>,
+  target: SimNode<N>,
+  linkType: string
+): string {
   return `${source.id}->${target.id}:${linkType}`
 }
 
