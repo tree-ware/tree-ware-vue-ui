@@ -217,15 +217,6 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
             .attr('y', NODE_PADDING)
             .attr('width', nodeConfig.width - this.nodePaddingDouble)
             .attr('height', nodeConfig.height - this.nodePaddingDouble)
-            .each(
-              (
-                d: SimNode<N>,
-                index: number,
-                nodes: SVGSVGElement[] | ArrayLike<SVGSVGElement>
-              ) => {
-                this.config.renderNodeContent(this.config.node, d, nodes[index])
-              }
-            )
           return node
         },
         update => update,
@@ -238,6 +229,17 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
         node.y = y
         return `translate(${x} ${y})`
       })
+    nodes
+      .selectAll<SVGSVGElement, SimNode<N>>('.node-content')
+      .each(
+        (
+          d: SimNode<N>,
+          index: number,
+          nodes: SVGSVGElement[] | ArrayLike<SVGSVGElement>
+        ) => {
+          this.config.renderNodeContent(this.config.node, d, nodes[index])
+        }
+      )
     return this.linkTooltipToSvgSvgElement(nodes)
   }
 
