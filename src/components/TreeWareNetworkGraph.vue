@@ -131,7 +131,7 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
     this.updateLinks(this.linksG)
     // Increase the height of the SVG to fit its contents.
     const bBox = this.svg.getBBox()
-    const graphHeight = bBox.y + bBox.height
+    const graphHeight = bBox.y + bBox.height + NODE_BORDER_WIDTH
     this.svg.setAttribute('height', graphHeight.toString())
   }
 
