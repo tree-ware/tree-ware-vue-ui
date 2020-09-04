@@ -34,7 +34,7 @@ export interface Node<N> {
 export interface Link<L> {
   sourceId: string
   targetId: string
-  linkColor: string
+  /** Used as the arrowhead marker ID and as the class for the arrow lines. */
   linkType: string
   data: L
   classes?: string

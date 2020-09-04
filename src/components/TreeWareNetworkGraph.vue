@@ -80,7 +80,7 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
   }
 
   private draw() {
-    this.populateLinkColorsAndTypes()
+    this.populateLinkTypes()
     this.createArrowheadDefinitions(this.svg)
     ;[this.simNodes, this.simLinks] = toSim(this.graph)
     this.staticLayout()
@@ -139,10 +139,9 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
     d3.select(svgElement)
       .append('defs')
       .selectAll('marker')
-      .data(this.linkColors)
+      .data(this.linkTypes)
       .enter()
       .append('marker')
-      .attr('fill', d => d)
       .attr('id', String)
       .attr('viewBox', '0 -5 10 10')
       .attr('refX', 5)
@@ -163,10 +162,10 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
         enter => {
           const linkG = enter
             .append('g')
-            .style('stroke', d => d.linkColor)
+            .attr('class', d => d.linkType)
             .style('fill', 'none')
           const linkStart = linkG.append('path').attr('class', 'link-start')
-          linkStart.attr('marker-end', d => `url(#${d.linkColor})`)
+          linkStart.attr('marker-end', d => `url(#${d.linkType})`)
           const linkEnd = linkG.append('path').attr('class', 'link-end')
           return linkG
         },
@@ -324,13 +323,9 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
     )
   }
 
-  private populateLinkColorsAndTypes() {
-    this.linkColors = []
+  private populateLinkTypes() {
     this.linkTypes = []
     this.graph.links.forEach(it => {
-      if (!this.linkColors.includes(it.linkColor)) {
-        this.linkColors.push(it.linkColor)
-      }
       if (!this.linkTypes.includes(it.linkType)) {
         this.linkTypes.push(it.linkType)
       }
@@ -376,7 +371,6 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
 
   private simNodes: SimNode<N>[] = []
   private simLinks: SimLink<N, L>[] = []
-  private linkColors: string[] = []
   private linkTypes: string[] = []
 
   private tooltip!: d3.Selection<HTMLDivElement, number, HTMLElement, any>
