@@ -162,7 +162,7 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
         enter => {
           const linkG = enter
             .append('g')
-            .attr('class', d => d.linkType)
+            .attr('class', d => `${d.linkType} ${d.classes}`)
             .style('fill', 'none')
           const linkStart = linkG.append('path').attr('class', 'link-start')
           linkStart.attr('marker-end', d => `url(#${d.linkType})`)
@@ -204,7 +204,7 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
           const node = enter.append('g')
           node
             .append('rect')
-            .attr('class', 'node-border')
+            .attr('class', d => `node-border ${d.classes}`)
             .attr('x', NODE_BORDER_WIDTH)
             .attr('y', NODE_BORDER_WIDTH)
             .attr('width', nodeConfig.width - this.nodeBorderWidthDouble)
