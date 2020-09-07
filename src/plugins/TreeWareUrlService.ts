@@ -88,14 +88,18 @@ export class TreeWareUrlService<P extends TreeWareUrlQueryConfig> {
     querySpec: TreeWareUrlQuerySpec<P>,
     other: TreeWareUrlOtherQueryParameters
   ): Dictionary<QueryParameterValue> {
+    // Include existing query-parameters if other is `asIs`.
+    // Existing query-parameters will be overridden by `querySpec`.
+    const query: Dictionary<QueryParameterValue> = {
+      ...(other === TreeWareUrlOtherQueryParameters.asIs
+        ? this.router.currentRoute.query
+        : {})
+    }
     // If a value is not specified in `querySpec` for a query-parameter,
     // use that parameter's get() function to get its value.
-    const query = Object.fromEntries(
-      Object.entries(querySpec).map(([name, spec]) => [
-        name,
-        spec !== undefined ? spec : this.query[name].get()
-      ])
-    )
+    Object.entries(querySpec).map(([name, spec]) => {
+      query[name] = spec !== undefined ? spec : this.query[name].get()
+    })
     if (other === TreeWareUrlOtherQueryParameters.reset) query[OTHER] = other
     return query
   }
