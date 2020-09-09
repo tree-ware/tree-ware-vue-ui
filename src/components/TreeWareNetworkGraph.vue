@@ -306,10 +306,6 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
     // for len - 30-60-90 triangle rule, trig to calculate mid points
     let len = dr - (dr / 2) * Math.sqrt(3)
 
-    const index = this.linkTypes.indexOf(d.linkType)
-    if (index !== -1) {
-      midY += index * LINKS_GAP
-    }
     midX = midX + (dy * len) / dr
     midY = midY + (-dx * len) / dr
 
