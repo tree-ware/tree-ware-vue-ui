@@ -88,13 +88,12 @@ export class TreeWareUrlService<P extends TreeWareUrlQueryConfig> {
     querySpec: TreeWareUrlQuerySpec<P>,
     other: TreeWareUrlOtherQueryParameters
   ): Dictionary<QueryParameterValue> {
-    // Include existing query-parameters if other is `asIs`.
+    // If `other` is `asIs`, include existing query-parameters, except OTHER.
     // Existing query-parameters will be overridden by `querySpec`.
-    const query: Dictionary<QueryParameterValue> = {
-      ...(other === TreeWareUrlOtherQueryParameters.asIs
-        ? this.router.currentRoute.query
-        : {})
-    }
+    const query: Dictionary<QueryParameterValue> =
+      other === TreeWareUrlOtherQueryParameters.asIs
+        ? this.getExistingQueryParameters()
+        : {}
     // If a value is not specified in `querySpec` for a query-parameter,
     // use that parameter's get() function to get its value.
     Object.entries(querySpec).map(([name, spec]) => {
@@ -102,6 +101,15 @@ export class TreeWareUrlService<P extends TreeWareUrlQueryConfig> {
     })
     if (other === TreeWareUrlOtherQueryParameters.reset) query[OTHER] = other
     return query
+  }
+
+  /** Returns a copy of existing query parameters without OTHER */
+  private getExistingQueryParameters(): Dictionary<QueryParameterValue> {
+    return Object.fromEntries(
+      Object.entries(this.router.currentRoute.query).filter(
+        ([name, _]) => name !== OTHER
+      )
+    )
   }
 
   private definedNames = Object.keys(this.query)
