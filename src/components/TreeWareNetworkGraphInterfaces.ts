@@ -3,7 +3,6 @@ import { LinkShape, NodeType } from './TreeWareNetworkGraphTypes'
 
 export interface NetworkGraphNodeConfig {
   width: number
-  height: number
   margin: number
   borderWidth: number
   padding: number
@@ -47,6 +46,7 @@ export interface Graph<N, L> {
 
 export interface SimNode<N> extends Node<N>, d3.SimulationNodeDatum {
   nodeType: NodeType
+  height: number
 }
 
 export interface SimLink<N, L>

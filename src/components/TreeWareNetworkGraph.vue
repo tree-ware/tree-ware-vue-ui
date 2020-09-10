@@ -26,6 +26,7 @@ import {
 
 const NODE_BORDER_WIDTH = 1
 const NODE_PADDING = 10
+const NODE_HEIGHT_MINIMUM = 2 * (NODE_BORDER_WIDTH + NODE_PADDING)
 
 const LINKS_GAP = 10
 
@@ -58,11 +59,10 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
   beforeMount() {
     const nodeConfig = this.config.node
     this.nodeWidthHalf = nodeConfig.width / 2
-    this.nodeHeightHalf = nodeConfig.height / 2
     this.nodeBorderWidthDouble = nodeConfig.borderWidth * 2
     this.nodePaddingDouble = nodeConfig.padding * 2
 
-    this.collisionRadius = nodeConfig.height * 0.75
+    this.collisionRadius = nodeConfig.width * 0.5
   }
 
   mounted() {
@@ -83,47 +83,7 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
     this.populateLinkTypes()
     this.createArrowheadDefinitions(this.svg)
     ;[this.simNodes, this.simLinks] = toSim(this.graph)
-    this.staticLayout()
-  }
-
-  private staticLayout() {
-    const deltaY = this.config.node.height + this.config.node.margin
-    // An array of y-values for the columns. The 3 internal columns are treated
-    // as 1 with respect to the y-axis.
-    const y = new Array<number>(3)
-    let yIndex = 0
-    this.simNodes.forEach(node => {
-      switch (node.nodeType) {
-        case NodeType.INGRESS:
-          yIndex = 0
-          break
-        case NodeType.EGRESS:
-          yIndex = 2
-          break
-        default:
-          yIndex = 1
-      }
-      node.y = y[yIndex] ?? 0
-      y[yIndex] = node.y + deltaY
-    })
     this.updateGraph()
-  }
-
-  private forceLayout() {
-    // Define forces on the graph
-    d3.forceSimulation(this.simNodes)
-      .force(
-        'link',
-        d3
-          .forceLink()
-          .id(node => (node as Node<N>).id)
-          .links(this.simLinks)
-      )
-      .force('charge', d3.forceManyBody())
-      .force('collision', d3.forceCollide().radius(this.collisionRadius))
-      .on('tick', () => {
-        this.updateGraph()
-      })
   }
 
   private updateGraph() {
@@ -208,38 +168,84 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
             .attr('x', NODE_BORDER_WIDTH)
             .attr('y', NODE_BORDER_WIDTH)
             .attr('width', nodeConfig.width - this.nodeBorderWidthDouble)
-            .attr('height', nodeConfig.height - this.nodeBorderWidthDouble)
           node
             .append('svg')
             .attr('class', 'node-content')
             .attr('x', NODE_PADDING)
             .attr('y', NODE_PADDING)
             .attr('width', nodeConfig.width - this.nodePaddingDouble)
-            .attr('height', nodeConfig.height - this.nodePaddingDouble)
           return node
         },
         update => update,
         exit => exit.remove()
       )
-      .attr('transform', (node: SimNode<N>) => {
-        const x = this.boundedX(node)
-        const y = boundedY(node)
-        node.x = x
-        node.y = y
-        return `translate(${x} ${y})`
-      })
-    nodes
-      .selectAll<SVGSVGElement, SimNode<N>>('.node-content')
-      .each(
-        (
-          d: SimNode<N>,
-          index: number,
-          nodes: SVGSVGElement[] | ArrayLike<SVGSVGElement>
-        ) => {
-          this.config.renderNodeContent(this.config.node, d, nodes[index])
-        }
-      )
+    this.renderNodesContent(nodes)
+    this.layoutNodes(nodes)
     return this.linkTooltipToSvgSvgElement(nodes)
+  }
+
+  private renderNodesContent(
+    nodes: d3.Selection<SVGGElement, SimNode<N>, SVGGElement, unknown>
+  ) {
+    nodes.each(
+      (
+        d: SimNode<N>,
+        index: number,
+        nodeArray: SVGGElement[] | ArrayLike<SVGGElement>
+      ) => {
+        const nodeG = nodeArray[index]
+        const nodeSvg = nodeG.querySelector('svg')
+        if (nodeSvg === null) return
+
+        this.config.renderNodeContent(this.config.node, d, nodeSvg)
+
+        // Set content height to fit the rendered content.
+        const bBox = nodeSvg.getBBox()
+        const contentHeight = bBox.y + bBox.height
+        nodeSvg.setAttribute('height', contentHeight.toString())
+
+        // Set node height to fit the contents, padding, and border,
+        // both in the svg element as well as in the SimNode data.
+        const nodeHeight = contentHeight + this.nodePaddingDouble
+        nodeSvg.previousElementSibling?.setAttribute(
+          'height',
+          nodeHeight.toString()
+        )
+        d.height = nodeHeight
+      }
+    )
+  }
+
+  private layoutNodes(
+    nodes: d3.Selection<SVGGElement, SimNode<N>, SVGGElement, unknown>
+  ) {
+    // An array of y-values for the columns. The 3 internal columns are treated
+    // as 1 with respect to the y-axis.
+    const y = new Array<number>(3)
+    let yIndex = 0
+    nodes.each(
+      (
+        d: SimNode<N>,
+        index: number,
+        nodeArray: SVGGElement[] | ArrayLike<SVGGElement>
+      ) => {
+        const nodeG = nodeArray[index]
+        switch (d.nodeType) {
+          case NodeType.INGRESS:
+            yIndex = 0
+            break
+          case NodeType.EGRESS:
+            yIndex = 2
+            break
+          default:
+            yIndex = 1
+        }
+        d.x = this.boundedX(d)
+        d.y = y[yIndex] ?? 0
+        y[yIndex] = d.y + d.height + this.config.node.margin
+        nodeG.setAttribute('transform', `translate(${d.x} ${d.y})`)
+      }
+    )
   }
 
   private linkTooltipToSvgSvgElement(
@@ -270,10 +276,10 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
   ) {
     // Set the source of the link to the middle of the right edge of the node.
     let sourceX = (d.source.x || 0) + this.config.node.width
-    let sourceY = (d.source.y || 0) + this.nodeHeightHalf
+    let sourceY = (d.source.y || 0) + d.source.height / 2
     // Set the target of the link to the middle of the left edge of the node.
     let targetX = d.target.x || 0
-    let targetY = (d.target.y || 0) + this.nodeHeightHalf
+    let targetY = (d.target.y || 0) + d.target.height / 2
 
     // For internal nodes, the links should be on the right edge if the source
     // is above the target, and on the left edge if the source is below the
@@ -356,7 +362,6 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
   }
 
   private nodeWidthHalf: number = 0
-  private nodeHeightHalf: number = 0
   private nodeBorderWidthDouble: number = 0
   private nodePaddingDouble: number = 0
 
@@ -389,7 +394,8 @@ function boundedY<N>(node: SimNode<N>): number {
 function toSim<N, L>(graph: Graph<N, L>): [SimNode<N>[], SimLink<N, L>[]] {
   const simNodes: SimNode<N>[] = graph.nodes.map(node => ({
     ...node,
-    nodeType: node.isInternal ? NodeType.INTERNAL : NodeType.NONE
+    nodeType: node.isInternal ? NodeType.INTERNAL : NodeType.NONE,
+    height: NODE_HEIGHT_MINIMUM
   }))
   const simNodeMap: SimNodeMap<N> = {}
   simNodes.forEach(node => {
