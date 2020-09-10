@@ -106,6 +106,7 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
       .attr('viewBox', '0 -5 10 10')
       .attr('refX', 5)
       .attr('refY', 0)
+      .attr('markerUnits', 'userSpaceOnUse')
       .attr('markerWidth', 16)
       .attr('markerHeight', 20)
       .attr('orient', 'auto')
@@ -122,7 +123,7 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
         enter => {
           const linkG = enter
             .append('g')
-            .attr('class', d => `${d.linkType} ${d.classes}`)
+            .attr('class', d => `${d.linkType} ${d.classes ?? ''}`)
             .style('fill', 'none')
           const linkStart = linkG.append('path').attr('class', 'link-start')
           linkStart.attr('marker-end', d => `url(#${d.linkType})`)
@@ -164,7 +165,7 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
           const node = enter.append('g')
           node
             .append('rect')
-            .attr('class', d => `node-border ${d.classes}`)
+            .attr('class', d => `node-border ${d.classes ?? ''}`)
             .attr('x', NODE_BORDER_WIDTH)
             .attr('y', NODE_BORDER_WIDTH)
             .attr('width', nodeConfig.width - this.nodeBorderWidthDouble)
