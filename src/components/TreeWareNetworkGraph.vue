@@ -28,7 +28,7 @@ const NODE_BORDER_WIDTH = 1
 const NODE_PADDING = 10
 const NODE_HEIGHT_MINIMUM = 2 * (NODE_BORDER_WIDTH + NODE_PADDING)
 
-const LINKS_GAP = 10
+const SELF_LINK_SIZE = 100
 
 export type SimNodeMap<N> = { [nodeId: string]: SimNode<N> }
 
@@ -103,12 +103,12 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
       .enter()
       .append('marker')
       .attr('id', String)
-      .attr('viewBox', '0 -5 10 10')
-      .attr('refX', 5)
+      .attr('viewBox', '0 -3 10 6')
+      .attr('refX', 10)
       .attr('refY', 0)
       .attr('markerUnits', 'userSpaceOnUse')
-      .attr('markerWidth', 16)
-      .attr('markerHeight', 20)
+      .attr('markerWidth', 15)
+      .attr('markerHeight', 9)
       .attr('orient', 'auto')
       .append('path')
       .attr('d', 'M0,-3L10,0L0,3')
@@ -294,8 +294,8 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
     let midX = (targetX + sourceX) / 2
     let midY = (targetY + sourceY) / 2
 
+    // Render a straight link if the source and target are horizontally spread.
     if (this.config.link.shape === LinkShape.CURVED_IF_NEEDED && dx !== 0) {
-      // Use a straight arrow when the source and target horizontally spread.
       linkStart.attr(
         'd',
         generateLineDefinitionString(sourceX, sourceY, midX, midY)
@@ -307,7 +307,18 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
       return
     }
 
+    // At this point, the source and target have the same x-coordinates. If
+    // their y-coordinates are also the same, then it means the source and
+    // target are the same node. So render a self-referential curved link.
     const dy = targetY - sourceY
+    if (dy === 0) {
+      linkStart.attr('d', getSelfReferentialLink(sourceX, sourceY).toString())
+      return
+    }
+
+    // At this point, the source and target are different nodes in the same
+    // column. So render a curved link.
+
     const dr = Math.sqrt(dx * dx + dy * dy)
 
     // for len - 30-60-90 triangle rule, trig to calculate mid points
@@ -462,6 +473,35 @@ function generateArcDefinitionString(
     ',' +
     targetY
   )
+}
+
+function getSelfReferentialLink(x: number, y: number): d3.Path {
+  // Separate the source and target of the link a bit.
+  const sourceX = x
+  const sourceY = y + NODE_PADDING
+  const targetX = x
+  const targetY = y - NODE_PADDING
+
+  // The self-referential curved link is implemented as a bezier path with
+  // the following 2 control points. Control point 1 is to the left and
+  // below the source point. Control point 2 is to the left and above the
+  // source point.
+  const control1X = sourceX - SELF_LINK_SIZE
+  const control1Y = sourceY + SELF_LINK_SIZE
+  const control2X = targetX - SELF_LINK_SIZE
+  const control2Y = targetY - SELF_LINK_SIZE
+
+  const path = d3.path()
+  path.moveTo(sourceX, sourceY)
+  path.bezierCurveTo(
+    control1X,
+    control1Y,
+    control2X,
+    control2Y,
+    targetX,
+    targetY
+  )
+  return path
 }
 </script>
 
