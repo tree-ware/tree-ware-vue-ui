@@ -4,8 +4,6 @@ import { LinkShape, NodeType } from './TreeWareNetworkGraphTypes'
 export interface NetworkGraphNodeConfig {
   width: number
   margin: number
-  borderWidth: number
-  padding: number
 }
 
 export interface NetworkGraphLinkConfig {
@@ -18,7 +16,7 @@ export interface NetworkGraphConfig<N> {
   renderNodeContent: (
     config: NetworkGraphNodeConfig,
     node: Node<N>,
-    nodeSvg: SVGSVGElement
+    nodeDiv: HTMLDivElement
   ) => void
 }
 
