@@ -180,10 +180,21 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
         index: number,
         nodeArray: HTMLDivElement[] | ArrayLike<HTMLDivElement>
       ) => {
-        const nodeDiv = nodeArray[index]
-        this.config.renderNodeContent(this.config.node, d, nodeDiv)
+        const node = nodeArray[index]
+        // TODO(deepak-nulu): $destory() the previous Vue component instance
+        node.innerHTML = '' // clears existing content
+        const content = new this.config.node.content({
+          parent: this,
+          propsData: { data: d.data }
+        })
+        // $mount() replaces the element specified as a parameter. We don't
+        // want the node element to be replaced, so we mount the component
+        // without an element, and then add the component as a child of the
+        // node.
+        content.$mount()
+        node.appendChild(content.$el)
         // Update height in the data to the rendered height of the node.
-        d.height = nodeDiv.clientHeight
+        d.height = node.clientHeight
       }
     )
   }

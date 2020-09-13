@@ -1,9 +1,17 @@
 import * as d3 from 'd3'
+import { VueConstructor } from 'vue'
 import { LinkShape, NodeType } from './TreeWareNetworkGraphTypes'
 
 export interface NetworkGraphNodeConfig {
   width: number
   margin: number
+  /**
+   * The Vue component to use for the node contents.
+   * The component will have to use `this.$parent` to access $-properties if
+   * they are undefined in `this`. For example, `this.$route` will be
+   * `undefined` and therefore `this.$parent.$route` will have to be used.
+   */
+  content: VueConstructor
 }
 
 export interface NetworkGraphLinkConfig {
@@ -13,11 +21,6 @@ export interface NetworkGraphLinkConfig {
 export interface NetworkGraphConfig<N> {
   node: NetworkGraphNodeConfig
   link: NetworkGraphLinkConfig
-  renderNodeContent: (
-    config: NetworkGraphNodeConfig,
-    node: Node<N>,
-    nodeDiv: HTMLDivElement
-  ) => void
 }
 
 export interface Node<N> {
