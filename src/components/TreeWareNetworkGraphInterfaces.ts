@@ -25,7 +25,6 @@ export interface NetworkGraphConfig<N> {
 
 export interface Node<N> {
   id: string
-  tooltipText: string
   isInternal: boolean
   data: N
   classes?: string
