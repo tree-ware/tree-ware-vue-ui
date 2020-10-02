@@ -201,6 +201,14 @@ export class ListController<
     this.fetchList()
   }
 
+  clear(): void {
+    this.resetToFirstPage()
+    this.errorInternal = ''
+    this.setSelectionCount(0)
+    this.setIsAllSelected(false)
+    this.itemsInternal = []
+  }
+
   refresh(): void {
     if (this.autoAdvance && this.pageInternal < this.maxPage) {
       ++this.pageInternal
