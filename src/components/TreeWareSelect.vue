@@ -198,7 +198,7 @@ export default class TreeWareSelect extends Vue {
   }
 
   private resetHighlightIndex(): void {
-    this.highlightIndex = this.options.findIndex(option =>
+    this.highlightIndex = this.matchingOptions.findIndex(option =>
       this.isExactMatchInternal(this.searchText, option)
     )
   }
