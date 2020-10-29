@@ -75,15 +75,15 @@ export default class TreeWareTimeRangeSelector extends Vue {
   }
 
   set endTimeMode(mode: EndTimeMode) {
-    if (mode === 'now') this.endTime = undefined
+    if (mode === 'now') this.endTime = null
     else this.endTime = new Date()
   }
 
-  get endTime(): Date | undefined {
+  get endTime(): Date | null {
     return this.syncedValue?.endTime ?? new Date()
   }
 
-  set endTime(endTime: Date | undefined) {
+  set endTime(endTime: Date | null) {
     const startTime = this.syncedValue.startTime
     if (this.isEndTimeLessThanStartTime(startTime, endTime)) return
     this.syncedValue = {
@@ -93,8 +93,11 @@ export default class TreeWareTimeRangeSelector extends Vue {
   }
 
   @Emit('error')
-  private isEndTimeLessThanStartTime(startTime: Date, endTime?: Date): boolean {
-    endTime = endTime === undefined ? new Date() : endTime
+  private isEndTimeLessThanStartTime(
+    startTime: Date,
+    endTime: Date | null
+  ): boolean {
+    endTime = endTime === null ? new Date() : endTime
     return endTime < startTime
   }
 

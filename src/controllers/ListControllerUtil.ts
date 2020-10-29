@@ -1,10 +1,9 @@
+import { empty } from 'rxjs'
 import {
   ListData,
   TimeRange,
   UiSelectionState
 } from './ListControllerInterfaces'
-
-import { empty } from 'rxjs'
 
 export function getTimeRange(startMinutesBefore: number = 10): TimeRange {
   const endTime = new Date()
@@ -12,7 +11,8 @@ export function getTimeRange(startMinutesBefore: number = 10): TimeRange {
   startTime.setMinutes(startTime.getMinutes() - startMinutesBefore)
 
   return {
-    startTime
+    startTime,
+    endTime: null
   }
 }
 
