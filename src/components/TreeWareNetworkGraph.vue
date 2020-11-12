@@ -4,7 +4,7 @@
     class="tree-ware-network-graph"
     style="position: relative;"
   >
-    <div ref="nodes" style="position: absolute; width: 100%; height: 100%;" />
+    <div ref="nodes" style="position: absolute; width: 100%; height: auto;" />
     <svg
       ref="links"
       style="position: absolute; z-index: -1; width: 100%; height: 100%;"
