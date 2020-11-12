@@ -1,6 +1,6 @@
 import * as d3 from 'd3'
 import { VueConstructor } from 'vue'
-import { LinkShape, NodeType } from './TreeWareNetworkGraphTypes'
+import { LinkDirection, LinkShape, NodeType } from './TreeWareNetworkGraphTypes'
 
 export interface NetworkGraphNodeConfig {
   width: number
@@ -55,10 +55,17 @@ export interface NodeCounts {
   egress: number
 }
 
+export interface ShowDirections {
+  ingress: boolean
+  internal: boolean
+  egress: boolean
+}
+
 export interface SimLink<N, L>
   extends Link<L>,
     d3.SimulationLinkDatum<SimNode<N>> {
   id: string
+  direction: LinkDirection
   source: SimNode<N>
   target: SimNode<N>
 }

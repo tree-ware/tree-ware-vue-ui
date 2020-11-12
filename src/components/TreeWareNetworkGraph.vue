@@ -23,13 +23,15 @@ import {
   NetworkGraphConfig,
   Node,
   NodeCounts,
+  ShowDirections,
   SimLink,
   SimNode
 } from './TreeWareNetworkGraphInterfaces'
 import {
   LinkShape,
   NodeType,
-  MAX_NODE_TYPE_VALUE
+  MAX_NODE_TYPE_VALUE,
+  LinkDirection
 } from './TreeWareNetworkGraphTypes'
 
 const SELF_LINK_Y_OFFSET = 10
@@ -37,57 +39,99 @@ const SELF_LINK_SIZE = 100
 
 export type SimNodeMap<N> = { [nodeId: string]: SimNode<N> }
 
+// NOTES:
+// The following "pipeline" is set up to render the input `graph`.
+// The pipeline stages (functions) are determined based on inputs
+// that trigger filtering or re-rendering. The pipeline starts in
+// `updateAll()`.
+// (1) `graph` property is converted into `inputSimNodes` & `inputSimLinks`.
+// (2) Node-counts are computed from `inputSimNodes`.
+// (3) `inputSimNodes` and `inputSimLinks` are filtered by `showDirections`
+//     property to create `visibleSimNodes` and `visibleSimLinks`.
+// (4) `visibleSimNodes` and `visibleSimLinks` are rendered.
+
 @Component
 export default class TreeWareNetworkGraph<N, L> extends Vue {
   @Prop() readonly config!: NetworkGraphConfig<N>
   @Prop() readonly graph!: Graph<N, L>
+  @Prop() readonly showDirections?: ShowDirections
   @Prop({ default: false }) readonly redrawOnWindowResize!: boolean
 
   @Ref() readonly graphDiv!: HTMLDivElement
   @Ref() readonly nodes!: HTMLDivElement
   @Ref() readonly links!: SVGSVGElement
 
-  @Watch('graph', { deep: true })
-  graphChanged(newGraph: Graph<N, L>, oldGraph: Graph<N, L>) {
-    const nodeIdList = newGraph.nodes.map(it => it.id)
-    for (let link of newGraph.links) {
-      if (
-        !nodeIdList.includes(link.sourceId) ||
-        !nodeIdList.includes(link.targetId)
-      ) {
-        return
-      }
-    }
-    this.draw()
-  }
-
-  beforeMount() {
-    const nodeConfig = this.config.node
-  }
-
   mounted() {
     if (this.redrawOnWindowResize) {
-      window.addEventListener('resize', this.updateGraph)
+      window.addEventListener('resize', this.renderVisible)
     }
-    this.draw()
+    this.updateAll()
   }
 
   beforeDestroy() {
     if (this.redrawOnWindowResize) {
-      window.removeEventListener('resize', this.updateGraph)
+      window.removeEventListener('resize', this.renderVisible)
     }
   }
 
-  private draw() {
-    this.populateLinkTypes()
-    this.createArrowheadDefinitions()
-    ;[this.simNodes, this.simLinks] = toSim(this.graph)
-    const nodeCounts = getNodeCounts(this.simNodes)
-    this.$emit('node-counts', nodeCounts)
-    this.updateGraph()
+  @Watch('graph', { deep: true })
+  graphChanged(newGraph: Graph<N, L>, oldGraph: Graph<N, L>) {
+    this.updateAll()
   }
 
-  private updateGraph() {
+  @Watch('showDirections', { deep: true })
+  showDirectionsChanged(
+    newDirections: ShowDirections,
+    oldDirections: ShowDirections
+  ) {
+    this.updateVisible()
+  }
+
+  private updateAll() {
+    this.populateLinkTypes()
+    this.createArrowheadDefinitions()
+    ;[this.inputSimNodes, this.inputSimLinks] = toSim(this.graph)
+    const nodeCounts = getNodeCounts(this.inputSimNodes)
+    this.$emit('node-counts', nodeCounts)
+    this.updateVisible()
+  }
+
+  private updateVisible() {
+    if (this.showDirections) {
+      this.visibleSimNodes = this.inputSimNodes.filter(
+        this.filterNodeByDirection
+      )
+      this.visibleSimLinks = this.inputSimLinks.filter(
+        this.filterLinkByDirection
+      )
+    } else {
+      this.visibleSimNodes = this.inputSimNodes
+      this.visibleSimLinks = this.inputSimLinks
+    }
+    this.renderVisible()
+  }
+
+  private filterNodeByDirection(node: SimNode<N>): boolean {
+    const showDirections = this.showDirections
+    const nodeType = node.nodeType
+    if (showDirections?.ingress && nodeType & NodeType.INGRESS) return true
+    if (showDirections?.egress && nodeType & NodeType.EGRESS) return true
+    if (showDirections?.internal && nodeType & NodeType.INTERNAL) return true
+    return false
+  }
+
+  private filterLinkByDirection(link: SimLink<N, L>): boolean {
+    switch (link.direction) {
+      case LinkDirection.INTERNAL:
+        return this.showDirections?.internal ?? false
+      case LinkDirection.INGRESS:
+        return this.showDirections?.ingress ?? false
+      case LinkDirection.EGRESS:
+        return this.showDirections?.egress ?? false
+    }
+  }
+
+  private renderVisible() {
     this.updateNodes()
     this.updateLinks()
     // Increase the height of the graph to fit its contents.
@@ -117,7 +161,7 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
     const links = d3
       .select(this.links)
       .selectAll<SVGGElement, SimLink<N, L>>('g')
-      .data(this.simLinks, d => d.id)
+      .data(this.visibleSimLinks, d => d.id)
       .join(
         enter => {
           const linkG = enter
@@ -158,7 +202,7 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
     const nodes = d3
       .select(this.nodes)
       .selectAll<HTMLDivElement, SimNode<N>>('.node')
-      .data(this.simNodes, (node: SimNode<N>) => node.id)
+      .data(this.visibleSimNodes, (node: SimNode<N>) => node.id)
       .join(
         enter =>
           enter
@@ -345,11 +389,19 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
     return this.columnX[node.nodeType]
   }
 
+  private visibleGraph: Graph<N, L> = {
+    nodes: [],
+    links: []
+  }
+
   /** x-values for the nodes in each column */
   private columnX = new Array<number>(MAX_NODE_TYPE_VALUE).fill(0)
 
-  private simNodes: SimNode<N>[] = []
-  private simLinks: SimLink<N, L>[] = []
+  private inputSimNodes: SimNode<N>[] = []
+  private inputSimLinks: SimLink<N, L>[] = []
+
+  private visibleSimNodes: SimNode<N>[] = []
+  private visibleSimLinks: SimLink<N, L>[] = []
   private linkTypes: string[] = []
 }
 
@@ -379,10 +431,17 @@ function toSim<N, L>(graph: Graph<N, L>): [SimNode<N>[], SimLink<N, L>[]] {
       target.nodeType = NodeType.EGRESS
       if (source.isInternal) source.nodeType |= NodeType.EGRESS
     }
+    const direction =
+      source.nodeType === NodeType.INGRESS
+        ? LinkDirection.INGRESS
+        : target.nodeType === NodeType.EGRESS
+        ? LinkDirection.EGRESS
+        : LinkDirection.INTERNAL
     // TODO(deepak-nulu): handle the case where an external node is both ingress and egress.
     return {
       ...link,
       id: getLinkId(source, target, link.linkType),
+      direction,
       source,
       target
     }

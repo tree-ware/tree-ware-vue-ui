@@ -5,6 +5,12 @@ export enum NodeType {
   EGRESS = 1 << 2
 }
 
+export enum LinkDirection {
+  INTERNAL,
+  INGRESS,
+  EGRESS
+}
+
 export enum LinkShape {
   CURVED_IF_NEEDED,
   CURVED_ALWAYS
