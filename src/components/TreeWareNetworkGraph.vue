@@ -22,6 +22,7 @@ import {
   Link,
   NetworkGraphConfig,
   Node,
+  NodeCounts,
   SimLink,
   SimNode
 } from './TreeWareNetworkGraphInterfaces'
@@ -81,6 +82,8 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
     this.populateLinkTypes()
     this.createArrowheadDefinitions()
     ;[this.simNodes, this.simLinks] = toSim(this.graph)
+    const nodeCounts = getNodeCounts(this.simNodes)
+    this.$emit('node-counts', nodeCounts)
     this.updateGraph()
   }
 
@@ -385,6 +388,20 @@ function toSim<N, L>(graph: Graph<N, L>): [SimNode<N>[], SimLink<N, L>[]] {
     }
   })
   return [simNodes, simLinks]
+}
+
+function getNodeCounts<N>(simNodes: SimNode<N>[]): NodeCounts {
+  const nodeCounts: NodeCounts = {
+    ingress: 0,
+    internal: 0,
+    egress: 0
+  }
+  simNodes.forEach(simNode => {
+    if (simNode.nodeType & NodeType.INTERNAL) ++nodeCounts.internal
+    else if (simNode.nodeType & NodeType.INGRESS) ++nodeCounts.ingress
+    else if (simNode.nodeType & NodeType.EGRESS) ++nodeCounts.egress
+  })
+  return nodeCounts
 }
 
 function getLinkId<N>(

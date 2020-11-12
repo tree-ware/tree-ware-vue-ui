@@ -49,6 +49,12 @@ export interface SimNode<N> extends Node<N>, d3.SimulationNodeDatum {
   height: number
 }
 
+export interface NodeCounts {
+  ingress: number
+  internal: number
+  egress: number
+}
+
 export interface SimLink<N, L>
   extends Link<L>,
     d3.SimulationLinkDatum<SimNode<N>> {
