@@ -47,6 +47,7 @@ export interface Graph<N, L> {
 export interface SimNode<N> extends Node<N>, d3.SimulationNodeDatum {
   nodeType: NodeType
   height: number
+  isPinned: boolean
 }
 
 export interface NodeCounts {

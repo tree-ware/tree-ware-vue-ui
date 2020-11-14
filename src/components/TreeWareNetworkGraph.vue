@@ -27,6 +27,7 @@ import {
   SimLink,
   SimNode
 } from './TreeWareNetworkGraphInterfaces'
+import { getPinnedLinks } from './TreeWareNetworkGraphPinned'
 import {
   LinkShape,
   NodeType,
@@ -45,10 +46,12 @@ export type SimNodeMap<N> = { [nodeId: string]: SimNode<N> }
 // that trigger filtering or re-rendering. The pipeline starts in
 // `updateAll()`.
 // (1) `graph` property is converted into `inputSimNodes` & `inputSimLinks`.
-// (2) Node-counts are computed from `inputSimNodes`.
-// (3) `inputSimNodes` and `inputSimLinks` are filtered by `showDirections`
+// (2) `inputSimNodes` and `inputSimLinks` are filtered by pinned nodes to
+//     create `pinnedSimNodes` and `pinnedSimLinks`.
+// (3) Node-counts are computed from `pinnedSimNodes`.
+// (4) `pinnedSimNodes` and `pinnedSimLinks` are filtered by `showDirections`
 //     property to create `visibleSimNodes` and `visibleSimLinks`.
-// (4) `visibleSimNodes` and `visibleSimLinks` are rendered.
+// (5) `visibleSimNodes` and `visibleSimLinks` are rendered.
 
 @Component
 export default class TreeWareNetworkGraph<N, L> extends Vue {
@@ -91,22 +94,64 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
     this.populateLinkTypes()
     this.createArrowheadDefinitions()
     ;[this.inputSimNodes, this.inputSimLinks] = toSim(this.graph)
-    const nodeCounts = getNodeCounts(this.inputSimNodes)
+    this.updatePinned()
+  }
+
+  private updatePinned() {
+    const pinnedIngress = this.findPinned(NodeType.INGRESS)
+    const pinnedInternal = this.inputSimNodes.find(
+      node => node.isPinned && node.nodeType & NodeType.INTERNAL
+    )
+    const pinnedEgress = this.findPinned(NodeType.EGRESS)
+
+    // Include links first.
+    this.pinnedSimLinks = getPinnedLinks(
+      this.inputSimLinks,
+      pinnedIngress,
+      pinnedInternal,
+      pinnedEgress
+    )
+
+    // Include all nodes from the pinned links.
+    const nodeIdSet = new Set<string>()
+    this.pinnedSimNodes = []
+    this.pinnedSimLinks.forEach(link => {
+      if (!nodeIdSet.has(link.source.id)) {
+        this.pinnedSimNodes.push(link.source)
+        nodeIdSet.add(link.source.id)
+      }
+      if (!nodeIdSet.has(link.target.id)) {
+        this.pinnedSimNodes.push(link.target)
+        nodeIdSet.add(link.target.id)
+      }
+    })
+
+    this.updateNodeCounts()
+  }
+
+  private findPinned(nodeType: NodeType): SimNode<N> | undefined {
+    return this.inputSimNodes.find(
+      node => node.isPinned && node.nodeType === nodeType
+    )
+  }
+
+  private updateNodeCounts() {
+    const nodeCounts = getNodeCounts(this.pinnedSimNodes)
     this.$emit('node-counts', nodeCounts)
     this.updateVisible()
   }
 
   private updateVisible() {
     if (this.showDirections) {
-      this.visibleSimNodes = this.inputSimNodes.filter(
+      this.visibleSimNodes = this.pinnedSimNodes.filter(
         this.filterNodeByDirection
       )
-      this.visibleSimLinks = this.inputSimLinks.filter(
+      this.visibleSimLinks = this.pinnedSimLinks.filter(
         this.filterLinkByDirection
       )
     } else {
-      this.visibleSimNodes = this.inputSimNodes
-      this.visibleSimLinks = this.inputSimLinks
+      this.visibleSimNodes = this.pinnedSimNodes
+      this.visibleSimLinks = this.pinnedSimLinks
     }
     this.renderVisible()
   }
@@ -232,13 +277,17 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
         node.innerHTML = '' // clears existing content
         const content = new this.config.node.content({
           parent: this,
-          propsData: { data: d.data }
+          propsData: { data: d.data, simNode: d }
         })
         // $mount() replaces the element specified as a parameter. We don't
         // want the node element to be replaced, so we mount the component
         // without an element, and then add the component as a child of the
         // node.
         content.$mount()
+        content.$on('pin', (isPinned: boolean) => {
+          d.isPinned = isPinned
+          this.updatePinned()
+        })
         node.appendChild(content.$el)
         // Update height in the data to the rendered height of the node.
         d.height = node.clientHeight
@@ -400,8 +449,12 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
   private inputSimNodes: SimNode<N>[] = []
   private inputSimLinks: SimLink<N, L>[] = []
 
+  private pinnedSimNodes: SimNode<N>[] = []
+  private pinnedSimLinks: SimLink<N, L>[] = []
+
   private visibleSimNodes: SimNode<N>[] = []
   private visibleSimLinks: SimLink<N, L>[] = []
+
   private linkTypes: string[] = []
 }
 
@@ -414,7 +467,8 @@ function toSim<N, L>(graph: Graph<N, L>): [SimNode<N>[], SimLink<N, L>[]] {
   const simNodes: SimNode<N>[] = graph.nodes.map(node => ({
     ...node,
     nodeType: node.isInternal ? NodeType.INTERNAL : NodeType.NONE,
-    height: 0
+    height: 0,
+    isPinned: false
   }))
   const simNodeMap: SimNodeMap<N> = {}
   simNodes.forEach(node => {
