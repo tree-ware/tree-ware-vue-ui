@@ -112,22 +112,29 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
       pinnedEgress
     )
 
-    // Include all nodes from the pinned links.
+    // Include all pinned nodes.
     const nodeIdSet = new Set<string>()
     this.pinnedSimNodes = []
+    this.addToPinnedNodes(nodeIdSet, pinnedIngress)
+    this.addToPinnedNodes(nodeIdSet, pinnedInternal)
+    this.addToPinnedNodes(nodeIdSet, pinnedEgress)
+    // Include all nodes from the pinned links.
     this.pinnedSimLinks.forEach(link => {
-      if (!nodeIdSet.has(link.source.id)) {
-        this.pinnedSimNodes.push(link.source)
-        nodeIdSet.add(link.source.id)
-      }
-      if (!nodeIdSet.has(link.target.id)) {
-        this.pinnedSimNodes.push(link.target)
-        nodeIdSet.add(link.target.id)
-      }
+      this.addToPinnedNodes(nodeIdSet, link.source)
+      this.addToPinnedNodes(nodeIdSet, link.target)
     })
     this.pinnedSimNodes.sort(this.config.node.compare)
 
     this.updateNodeCounts()
+  }
+
+  private addToPinnedNodes(
+    nodeIdSet: Set<string>,
+    node: SimNode<N> | undefined
+  ) {
+    if (!node || nodeIdSet.has(node.id)) return
+    this.pinnedSimNodes.push(node)
+    nodeIdSet.add(node.id)
   }
 
   private findPinned(nodeType: NodeType): SimNode<N> | undefined {
