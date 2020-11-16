@@ -2,9 +2,10 @@ import * as d3 from 'd3'
 import { VueConstructor } from 'vue'
 import { LinkDirection, LinkShape, NodeType } from './TreeWareNetworkGraphTypes'
 
-export interface NetworkGraphNodeConfig {
+export interface NetworkGraphNodeConfig<N> {
   width: number
   margin: number
+  compare: (a: Node<N>, b: Node<N>) => number
   /**
    * The Vue component to use for the node contents.
    * The component will have to use `this.$parent` to access $-properties if
@@ -19,7 +20,7 @@ export interface NetworkGraphLinkConfig {
 }
 
 export interface NetworkGraphConfig<N> {
-  node: NetworkGraphNodeConfig
+  node: NetworkGraphNodeConfig<N>
   link: NetworkGraphLinkConfig
 }
 

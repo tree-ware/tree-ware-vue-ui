@@ -125,6 +125,7 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
         nodeIdSet.add(link.target.id)
       }
     })
+    this.pinnedSimNodes.sort(this.config.node.compare)
 
     this.updateNodeCounts()
   }
