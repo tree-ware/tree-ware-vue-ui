@@ -2,12 +2,19 @@ import * as d3 from 'd3'
 import { VueConstructor } from 'vue'
 import { LinkDirection, LinkShape, NodeType } from './TreeWareNetworkGraphTypes'
 
+export interface NodeVueContentData<N> {
+  isPinned: boolean
+  data: N
+}
+
 export interface NetworkGraphNodeConfig<N> {
   width: number
   margin: number
   compare: (a: Node<N>, b: Node<N>) => number
   /**
    * The Vue component to use for the node contents.
+   * The Vue component instance will be passed a property named `node` of type
+   * `NodeVueContentData`.
    * The component will have to use `this.$parent` to access $-properties if
    * they are undefined in `this`. For example, `this.$route` will be
    * `undefined` and therefore `this.$parent.$route` will have to be used.

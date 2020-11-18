@@ -17,12 +17,14 @@ import * as d3 from 'd3'
 
 import 'reflect-metadata'
 import { Component, Prop, Ref, Vue, Watch } from 'vue-property-decorator'
+import { CombinedVueInstance } from 'vue/types/vue'
 import {
   Graph,
   Link,
   NetworkGraphConfig,
   Node,
   NodeCounts,
+  NodeVueContentData,
   ShowDirections,
   SimLink,
   SimNode
@@ -39,6 +41,14 @@ const SELF_LINK_Y_OFFSET = 10
 const SELF_LINK_SIZE = 100
 
 export type SimNodeMap<N> = { [nodeId: string]: SimNode<N> }
+
+type NodeVueContent = CombinedVueInstance<
+  Vue,
+  object,
+  object,
+  object,
+  Record<never, any>
+>
 
 // NOTES:
 // The following "pipeline" is set up to render the input `graph`.
@@ -258,22 +268,23 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
       .data(this.visibleSimNodes, (node: SimNode<N>) => node.id)
       .join(
         enter =>
-          enter
-            .append('div')
-            .style('position', 'absolute')
-            .style('width', `${nodeConfig.width}px`)
-            .attr('class', d => `node ${d.classes ?? ''}`),
-        update => update,
-        exit => exit.remove()
+          this.addVueContent(
+            enter
+              .append('div')
+              .style('position', 'absolute')
+              .style('width', `${nodeConfig.width}px`)
+              .attr('class', d => `node ${d.classes ?? ''}`)
+          ),
+        update => this.updateVueContent(update),
+        exit => this.destroyVueContent(exit.remove())
       )
-    this.renderNodesContent(nodes)
     this.layoutNodes(nodes)
     return nodes
   }
 
-  private renderNodesContent(
+  private addVueContent(
     nodes: d3.Selection<HTMLDivElement, SimNode<N>, HTMLDivElement, unknown>
-  ) {
+  ): d3.Selection<HTMLDivElement, SimNode<N>, HTMLDivElement, unknown> {
     nodes.each(
       (
         d: SimNode<N>,
@@ -281,11 +292,13 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
         nodeArray: HTMLDivElement[] | ArrayLike<HTMLDivElement>
       ) => {
         const node = nodeArray[index]
-        // TODO(deepak-nulu): $destory() the previous Vue component instance
-        node.innerHTML = '' // clears existing content
+        const contentData: NodeVueContentData<N> = {
+          isPinned: d.isPinned,
+          data: d.data
+        }
         const content = new this.config.node.content({
           parent: this,
-          propsData: { data: d.data, simNode: d }
+          propsData: { node: contentData }
         })
         // $mount() replaces the element specified as a parameter. We don't
         // want the node element to be replaced, so we mount the component
@@ -293,14 +306,61 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
         // node.
         content.$mount()
         content.$on('pin', (isPinned: boolean) => {
-          d.isPinned = isPinned
+          // DOM elements get reused with new data instances due to D3 joins.
+          // So don't close over the current data instance (`d`), but get the
+          // data instance when this callback runs. The data instance is on
+          // the parent (since the Vue component is added as a child of the
+          // node above).
+          const parent = content.$el.parentElement
+          const datum = d3.select(parent).datum() as SimNode<N>
+          datum.isPinned = isPinned
           this.updatePinned()
         })
         node.appendChild(content.$el)
-        // Update height in the data to the rendered height of the node.
-        d.height = node.clientHeight
+        this.nodeContent.set(node, content)
       }
     )
+    return nodes
+  }
+
+  private updateVueContent(
+    nodes: d3.Selection<HTMLDivElement, SimNode<N>, HTMLDivElement, unknown>
+  ): d3.Selection<HTMLDivElement, SimNode<N>, HTMLDivElement, unknown> {
+    nodes.each(
+      (
+        d: SimNode<N>,
+        index: number,
+        nodeArray: HTMLDivElement[] | ArrayLike<HTMLDivElement>
+      ) => {
+        const node = nodeArray[index]
+        const content = this.nodeContent.get(node) as any | undefined
+        if (content) {
+          content.node.isPinned = d.isPinned
+          content.node.data = d.data
+          content.$forceUpdate()
+        }
+      }
+    )
+    return nodes
+  }
+
+  private destroyVueContent(
+    nodes: d3.Selection<HTMLDivElement, SimNode<N>, HTMLDivElement, unknown>
+  ): d3.Selection<HTMLDivElement, SimNode<N>, HTMLDivElement, unknown> {
+    nodes.each(
+      (
+        d: SimNode<N>,
+        index: number,
+        nodeArray: HTMLDivElement[] | ArrayLike<HTMLDivElement>
+      ) => {
+        const node = nodeArray[index]
+        const content = this.nodeContent.get(node) as NodeVueContent | undefined
+        if (content) {
+          content.$destroy()
+        }
+      }
+    )
+    return nodes
   }
 
   private layoutNodes(
@@ -329,6 +389,8 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
         }
         d.x = this.boundedX(d)
         d.y = y[yIndex] ?? 0
+        // Update height in the data to the rendered height of the node.
+        d.height = nodeG.clientHeight
         y[yIndex] = d.y + d.height + this.config.node.margin
         nodeG.style.transform = `translate(${d.x}px, ${d.y}px)`
       }
@@ -464,6 +526,8 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
   private visibleSimLinks: SimLink<N, L>[] = []
 
   private linkTypes: string[] = []
+
+  private nodeContent = d3.local()
 }
 
 /** Returns 0 if node y-value is negative, else return node y-value */
