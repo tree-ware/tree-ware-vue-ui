@@ -122,17 +122,28 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
       pinnedEgress
     )
 
-    // Include all pinned nodes.
-    const nodeIdSet = new Set<string>()
-    this.pinnedSimNodes = []
-    this.addToPinnedNodes(nodeIdSet, pinnedIngress)
-    this.addToPinnedNodes(nodeIdSet, pinnedInternal)
-    this.addToPinnedNodes(nodeIdSet, pinnedEgress)
-    // Include all nodes from the pinned links.
-    this.pinnedSimLinks.forEach(link => {
-      this.addToPinnedNodes(nodeIdSet, link.source)
-      this.addToPinnedNodes(nodeIdSet, link.target)
-    })
+    // Include all input nodes if there are no pinned nodes & no input links.
+    if (
+      !pinnedIngress &&
+      !pinnedIngress &&
+      !pinnedEgress &&
+      this.inputSimLinks.length === 0
+    ) {
+      this.pinnedSimNodes = [...this.inputSimNodes]
+    } else {
+      // Include all pinned nodes.
+      const nodeIdSet = new Set<string>()
+      this.pinnedSimNodes = []
+      this.addToPinnedNodes(nodeIdSet, pinnedIngress)
+      this.addToPinnedNodes(nodeIdSet, pinnedInternal)
+      this.addToPinnedNodes(nodeIdSet, pinnedEgress)
+
+      // Include all nodes from the pinned links.
+      this.pinnedSimLinks.forEach(link => {
+        this.addToPinnedNodes(nodeIdSet, link.source)
+        this.addToPinnedNodes(nodeIdSet, link.target)
+      })
+    }
     this.pinnedSimNodes.sort(this.config.node.compare)
 
     this.updateNodeCounts()
@@ -179,7 +190,9 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
     const nodeType = node.nodeType
     if (showDirections?.ingress && nodeType & NodeType.INGRESS) return true
     if (showDirections?.egress && nodeType & NodeType.EGRESS) return true
-    if (showDirections?.internal && nodeType & NodeType.INTERNAL) return true
+    if (nodeType & NodeType.INTERNAL) {
+      return showDirections?.internal || this.inputSimLinks.length === 0
+    }
     return false
   }
 
