@@ -26,7 +26,6 @@ import {
   NetworkGraphConfig,
   Node,
   NodeCounts,
-  NodeVueContentData,
   ShowDirections,
   SimLink,
   SimNode
@@ -309,13 +308,9 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
         nodeArray: HTMLDivElement[] | ArrayLike<HTMLDivElement>
       ) => {
         const node = nodeArray[index]
-        const contentData: NodeVueContentData<N> = {
-          isPinned: d.isPinned,
-          data: d.data
-        }
         const content = new this.config.node.content({
           parent: this,
-          propsData: { node: contentData }
+          propsData: { node: d }
         })
         // $mount() replaces the element specified as a parameter. We don't
         // want the node element to be replaced, so we mount the component
