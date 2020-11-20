@@ -71,7 +71,7 @@ export default class TreeWareTimeRangeSelector extends Vue {
   endTimeModes: EndTimeMode[] = ['now', 'fixed']
 
   get endTimeMode(): EndTimeMode {
-    return this.syncedValue?.endTime === undefined ? 'now' : 'fixed'
+    return this.syncedValue?.endTime === null ? 'now' : 'fixed'
   }
 
   set endTimeMode(mode: EndTimeMode) {
