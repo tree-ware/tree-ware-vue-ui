@@ -8,7 +8,9 @@
     <svg
       ref="links"
       style="position: absolute; z-index: -1; width: 100%; height: 100%;"
-    />
+    >
+      <defs ref="defs" />
+    </svg>
   </div>
 </template>
 
@@ -73,6 +75,7 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
   @Ref() readonly graphDiv!: HTMLDivElement
   @Ref() readonly nodes!: HTMLDivElement
   @Ref() readonly links!: SVGSVGElement
+  @Ref() readonly defs!: SVGDefsElement
 
   mounted() {
     if (this.redrawOnWindowResize) {
@@ -215,22 +218,23 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
   }
 
   private createArrowheadDefinitions() {
-    d3.select(this.links)
-      .append('defs')
+    d3.select(this.defs)
       .selectAll('marker')
       .data(this.linkTypes)
-      .enter()
-      .append('marker')
-      .attr('id', String)
-      .attr('viewBox', '0 -3 10 6')
-      .attr('refX', 10)
-      .attr('refY', 0)
-      .attr('markerUnits', 'userSpaceOnUse')
-      .attr('markerWidth', 15)
-      .attr('markerHeight', 9)
-      .attr('orient', 'auto')
-      .append('path')
-      .attr('d', 'M0,-3L10,0L0,3')
+      .join(enter =>
+        enter
+          .append('marker')
+          .attr('id', String)
+          .attr('viewBox', '0 -3 10 6')
+          .attr('refX', 10)
+          .attr('refY', 0)
+          .attr('markerUnits', 'userSpaceOnUse')
+          .attr('markerWidth', 15)
+          .attr('markerHeight', 9)
+          .attr('orient', 'auto')
+          .append('path')
+          .attr('d', 'M0,-3L10,0L0,3')
+      )
   }
 
   private updateLinks() {
