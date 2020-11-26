@@ -9,10 +9,7 @@ export interface NetworkGraphNodeConfig<N> {
   /**
    * The Vue component to use for the node contents.
    * The Vue component instance will be passed a property named `node` of type
-   * `SimNode`.
-   * The component will have to use `this.$parent` to access $-properties if
-   * they are undefined in `this`. For example, `this.$route` will be
-   * `undefined` and therefore `this.$parent.$route` will have to be used.
+   * `SimNode`. It should emit a boolean 'pin' event when it's pinned/unpinned.
    */
   content: VueConstructor
 }
@@ -30,7 +27,7 @@ export interface Node<N> {
   id: string
   isInternal: boolean
   data: N
-  classes?: string
+  classes: string
 }
 
 export interface Link<L> {
@@ -39,8 +36,8 @@ export interface Link<L> {
   /** Used as the arrowhead marker ID and as the class for the arrow lines. */
   linkType: string
   data: L
-  classes?: string
-  selected?: boolean
+  classes: string
+  selected: boolean
 }
 
 export interface Graph<N, L> {
@@ -50,6 +47,7 @@ export interface Graph<N, L> {
 
 export interface SimNode<N> extends Node<N>, d3.SimulationNodeDatum {
   nodeType: NodeType
+  width: number
   height: number
   isPinned: boolean
 }
@@ -73,4 +71,9 @@ export interface SimLink<N, L>
   direction: LinkDirection
   source: SimNode<N>
   target: SimNode<N>
+}
+
+export interface SimGraph<N, L> {
+  nodes: SimNode<N>[]
+  links: SimLink<N, L>[]
 }

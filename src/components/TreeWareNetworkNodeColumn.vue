@@ -1,0 +1,57 @@
+<template>
+  <div class="tree-ware-network-node-column">
+    <tree-ware-network-node
+      v-for="node in nodes"
+      ref="children"
+      :key="node.id"
+      :node="node"
+      :content="nodeConfig.content"
+      :nodes-element="nodesElement"
+      class="node"
+    />
+  </div>
+</template>
+
+<script lang="ts">
+import 'reflect-metadata'
+import { Component, Prop, Ref, Vue } from 'vue-property-decorator'
+import {
+  NetworkGraphNodeConfig,
+  SimNode
+} from './TreeWareNetworkGraphInterfaces'
+import TreeWareNetworkNode from './TreeWareNetworkNode.vue'
+
+@Component({
+  components: {
+    TreeWareNetworkNode
+  }
+})
+export default class TreeWareNetworkNodeColumn<N> extends Vue {
+  @Prop() readonly nodeConfig!: NetworkGraphNodeConfig<N>
+  @Prop() readonly nodes!: SimNode<N>[]
+  @Prop() readonly nodesElement!: Element
+
+  @Ref() readonly children!: TreeWareNetworkNode<N>[]
+
+  updated() {
+    this.children?.forEach(child => {
+      child.updateSimNodeDomAttributes()
+    })
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+.tree-ware-network-node-column {
+  width: 180px;
+
+  .node {
+    width: 180px;
+    margin-top: 30px;
+
+    &:first-child {
+      margin-top: 0px;
+    }
+  }
+}
+</style>
