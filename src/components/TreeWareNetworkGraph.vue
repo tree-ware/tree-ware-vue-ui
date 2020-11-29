@@ -37,6 +37,10 @@ import {
 
 const SELF_LINK_Y_OFFSET = 10
 const SELF_LINK_SIZE = 100
+const DEFAULT_LINK_WIDTH = 1
+const DEFAULT_HOVER_LINK_WIDTH = 3
+const SELECTED_LINK_WIDTH = 4
+const SELECTED_HOVER_LINK_WIDTH = 5
 
 export type SimNodeMap<N> = { [nodeId: string]: SimNode<N> }
 
@@ -281,11 +285,11 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
           const linkStart = linkG.select<SVGPathElement>('.link-start')
           const linkEnd = linkG.select<SVGPathElement>('.link-end')
           this.updateLinkArc(d, linkStart, linkEnd)
-          const link = IdLinkHash[d.id]
+          const link = idLinkHash[d.id]
           if (link.selected) {
-            this.setStrokeWidth(d, index, links, 4)
+            this.setStrokeWidth(d, index, links, SELECTED_LINK_WIDTH)
           } else {
-            this.setStrokeWidth(d, index, links, 1)
+            this.setStrokeWidth(d, index, links, DEFAULT_LINK_WIDTH)
           }
         }
       )
@@ -296,12 +300,12 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
           index: number,
           links: SVGGElement[] | ArrayLike<SVGGElement>
         ) => {
-          const link = IdLinkHash[d.id]
+          const link = idLinkHash[d.id]
           if (this.allowSelectionForLinkTypes?.indexOf(link.linkType) > -1) {
             if (!link.selected) {
-              this.setStrokeWidth(d, index, links, 3)
+              this.setStrokeWidth(d, index, links, DEFAULT_HOVER_LINK_WIDTH)
             } else {
-              this.setStrokeWidth(d, index, links, 5)
+              this.setStrokeWidth(d, index, links, SELECTED_HOVER_LINK_WIDTH)
             }
           }
         }
@@ -313,12 +317,12 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
           index: number,
           links: SVGGElement[] | ArrayLike<SVGGElement>
         ) => {
-          const link = IdLinkHash[d.id]
+          const link = idLinkHash[d.id]
           if (this.allowSelectionForLinkTypes?.indexOf(link.linkType) > -1) {
             if (!link.selected) {
-              this.setStrokeWidth(d, index, links, 1)
+              this.setStrokeWidth(d, index, links, DEFAULT_LINK_WIDTH)
             } else {
-              this.setStrokeWidth(d, index, links, 4)
+              this.setStrokeWidth(d, index, links, SELECTED_LINK_WIDTH)
             }
           }
         }
@@ -330,16 +334,16 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
           index: number,
           links: SVGGElement[] | ArrayLike<SVGGElement>
         ) => {
-          const link = IdLinkHash[d.id]
+          const link = idLinkHash[d.id]
           if (this.allowSelectionForLinkTypes?.indexOf(link.linkType) > -1) {
             if (!link.selected) {
               this.$emit('select', link)
               link.selected = true
-              this.setStrokeWidth(d, index, links, 4)
+              this.setStrokeWidth(d, index, links, SELECTED_LINK_WIDTH)
             } else {
               this.$emit('unselect', link)
               link.selected = false
-              this.setStrokeWidth(d, index, links, 1)
+              this.setStrokeWidth(d, index, links, DEFAULT_LINK_WIDTH)
             }
           }
         }
@@ -614,7 +618,7 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
   private nodeContent = d3.local()
 }
 
-const IdLinkHash: any = {}
+const idLinkHash: any = {}
 /** Returns 0 if node y-value is negative, else return node y-value */
 function boundedY<N>(node: SimNode<N>): number {
   return Math.max(node.y || 0, 0)
@@ -650,7 +654,7 @@ function toSim<N, L>(graph: Graph<N, L>): [SimNode<N>[], SimLink<N, L>[]] {
         : LinkDirection.INTERNAL
     // TODO(deepak-nulu): handle the case where an external node is both ingress and egress.
     const id = getLinkId(source, target, link.linkType)
-    IdLinkHash[id] = link
+    idLinkHash[id] = link
     return {
       ...link,
       id,
