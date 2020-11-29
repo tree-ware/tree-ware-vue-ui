@@ -40,6 +40,7 @@ export interface Link<L> {
   linkType: string
   data: L
   classes?: string
+  selected?: boolean
 }
 
 export interface Graph<N, L> {

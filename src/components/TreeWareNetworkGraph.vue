@@ -5,10 +5,7 @@
     style="position: relative;"
   >
     <div ref="nodes" style="position: absolute; width: 100%; height: auto;" />
-    <svg
-      ref="links"
-      style="position: absolute; z-index: -1; width: 100%; height: 100%;"
-    >
+    <svg style="position: absolute; width: 100%; height: 100%;" ref="links">
       <defs ref="defs" />
     </svg>
   </div>
@@ -70,6 +67,7 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
   @Prop() readonly graph!: Graph<N, L>
   @Prop() readonly showDirections?: ShowDirections
   @Prop({ default: false }) readonly redrawOnWindowResize!: boolean
+  @Prop() allowSelectionForLinkTypes!: string[]
 
   @Ref() readonly graphDiv!: HTMLDivElement
   @Ref() readonly nodes!: HTMLDivElement
@@ -236,6 +234,19 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
       )
   }
 
+  private setStrokeWidth(
+    d: SimLink<N, L>,
+    index: number,
+    links: SVGGElement[] | ArrayLike<SVGGElement>,
+    width: number
+  ) {
+    const linkG = d3.select<SVGGElement, SimLink<N, L>>(links[index])
+    const linkStart = linkG.select<SVGPathElement>('.link-start')
+    const linkEnd = linkG.select<SVGPathElement>('.link-end')
+    linkStart.attr('stroke-width', width)
+    linkEnd.attr('stroke-width', width)
+  }
+
   private updateLinks() {
     const links = d3
       .select(this.links)
@@ -270,6 +281,67 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
           const linkStart = linkG.select<SVGPathElement>('.link-start')
           const linkEnd = linkG.select<SVGPathElement>('.link-end')
           this.updateLinkArc(d, linkStart, linkEnd)
+          const link = IdLinkHash[d.id]
+          if (link.selected) {
+            this.setStrokeWidth(d, index, links, 4)
+          } else {
+            this.setStrokeWidth(d, index, links, 1)
+          }
+        }
+      )
+      .on(
+        'mouseenter',
+        (
+          d: SimLink<N, L>,
+          index: number,
+          links: SVGGElement[] | ArrayLike<SVGGElement>
+        ) => {
+          const link = IdLinkHash[d.id]
+          if (this.allowSelectionForLinkTypes?.indexOf(link.linkType) > -1) {
+            if (!link.selected) {
+              this.setStrokeWidth(d, index, links, 3)
+            } else {
+              this.setStrokeWidth(d, index, links, 5)
+            }
+          }
+        }
+      )
+      .on(
+        'mouseleave',
+        (
+          d: SimLink<N, L>,
+          index: number,
+          links: SVGGElement[] | ArrayLike<SVGGElement>
+        ) => {
+          const link = IdLinkHash[d.id]
+          if (this.allowSelectionForLinkTypes?.indexOf(link.linkType) > -1) {
+            if (!link.selected) {
+              this.setStrokeWidth(d, index, links, 1)
+            } else {
+              this.setStrokeWidth(d, index, links, 4)
+            }
+          }
+        }
+      )
+      .on(
+        'click',
+        (
+          d: SimLink<N, L>,
+          index: number,
+          links: SVGGElement[] | ArrayLike<SVGGElement>
+        ) => {
+          const link = IdLinkHash[d.id]
+          if (this.allowSelectionForLinkTypes?.indexOf(link.linkType) > -1) {
+            if (!link.selected) {
+              this.$emit('select', link)
+              link.selected = true
+              this.setStrokeWidth(d, index, links, 4)
+            } else {
+              this.$emit('unselect', link)
+              link.selected = false
+              this.setStrokeWidth(d, index, links, 1)
+            }
+          }
         }
       )
   }
@@ -542,6 +614,7 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
   private nodeContent = d3.local()
 }
 
+const IdLinkHash: any = {}
 /** Returns 0 if node y-value is negative, else return node y-value */
 function boundedY<N>(node: SimNode<N>): number {
   return Math.max(node.y || 0, 0)
@@ -576,9 +649,11 @@ function toSim<N, L>(graph: Graph<N, L>): [SimNode<N>[], SimLink<N, L>[]] {
         ? LinkDirection.EGRESS
         : LinkDirection.INTERNAL
     // TODO(deepak-nulu): handle the case where an external node is both ingress and egress.
+    const id = getLinkId(source, target, link.linkType)
+    IdLinkHash[id] = link
     return {
       ...link,
-      id: getLinkId(source, target, link.linkType),
+      id,
       direction,
       source,
       target
