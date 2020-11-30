@@ -4,10 +4,10 @@
     class="tree-ware-network-graph"
     style="position: relative;"
   >
-    <div ref="nodes" style="position: absolute; width: 100%; height: auto;" />
     <svg style="position: absolute; width: 100%; height: 100%;" ref="links">
       <defs ref="defs" />
     </svg>
+    <div ref="nodes" style="position: absolute; width: 100%; height: auto;" />
   </div>
 </template>
 
