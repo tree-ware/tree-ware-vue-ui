@@ -91,6 +91,12 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
   }
 
   mounted() {
+    if (this.redrawOnWindowResize) {
+      window.addEventListener('resize', () => {
+        this.updateSimNodeDomAttributes()
+      })
+    }
+
     // We are using $nextTick() since we need the DOM positions of the nodes.
     //
     // We need to pass `nodesDiv` element to the TreeWareNetworkNode instances,
@@ -102,6 +108,14 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
     this.$nextTick(() => {
       this.updateSimNodeDomAttributes(this.nodesDiv)
     })
+  }
+
+  beforeDestroy() {
+    if (this.redrawOnWindowResize) {
+      window.removeEventListener('resize', () => {
+        this.updateSimNodeDomAttributes()
+      })
+    }
   }
 
   private updateSimNodeDomAttributes(nodesElement?: Element) {
