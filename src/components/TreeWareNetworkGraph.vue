@@ -29,24 +29,15 @@
       />
     </svg>
 
-    <div ref="nodes" class="nodes">
+    <div ref="nodesDiv" class="nodes">
       <tree-ware-network-node-column
+        v-for="(nodeColumn, index) in nodeColumns"
+        ref="nodeColumnsVue"
+        :key="index"
         :node-config="config.node"
-        :nodes="visibleIngressNodes"
-        :nodes-element="nodes"
-        class="ingress"
-      />
-      <tree-ware-network-node-column
-        :node-config="config.node"
-        :nodes="visibleInternalNodes"
-        :nodes-element="nodes"
-        class="internal"
-      />
-      <tree-ware-network-node-column
-        :node-config="config.node"
-        :nodes="visibleEgressNodes"
-        :nodes-element="nodes"
-        class="egress"
+        :nodes="nodeColumn.nodes"
+        :nodes-element="nodesDiv"
+        :class="nodeColumn.class"
       />
     </div>
   </div>
@@ -73,6 +64,11 @@ import TreeWareNetworkNodeColumn from './TreeWareNetworkNodeColumn.vue'
 
 type SimNodeMap<N> = { [nodeId: string]: SimNode<N> }
 
+interface NodeColumn<N> {
+  nodes: SimNode<N>[]
+  class: string
+}
+
 @Component({
   components: {
     TreeWareNetworkLink,
@@ -86,11 +82,40 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
   @Prop({ default: false }) readonly redrawOnWindowResize!: boolean
   @Prop({ default: () => [] }) allowSelectionForLinkTypes!: string[]
 
-  @Ref() readonly nodes!: HTMLDivElement
+  @Ref() readonly nodesDiv!: HTMLDivElement
+  @Ref() readonly nodeColumnsVue!: TreeWareNetworkNodeColumn<N>[]
 
   @Watch('nodeCounts', { deep: true })
   private nodeCountsChanged(newNodeCounts: NodeCounts) {
     this.$emit('node-counts', newNodeCounts)
+  }
+
+  mounted() {
+    // We are using $nextTick() since we need the DOM positions of the nodes.
+    //
+    // We need to pass `nodesDiv` element to the TreeWareNetworkNode instances,
+    // but `$refs` are only populated after the component has been renedered,
+    // they are not reactive, and should not be referred to in templates. So
+    // we cannot pass `nodesDiv` via the template to the TreeWareNetworkNode
+    // instances the first time the graph is rendered. So we pass `nodesDiv`
+    // in the function call below for the first-time case.
+    this.$nextTick(() => {
+      this.updateSimNodeDomAttributes(this.nodesDiv)
+    })
+  }
+
+  private updateSimNodeDomAttributes(nodesElement?: Element) {
+    this.nodeColumnsVue?.forEach(vueNodeColumn => {
+      vueNodeColumn.updateSimNodeDomAttributes(nodesElement)
+    })
+  }
+
+  private get nodeColumns(): NodeColumn<N>[] {
+    return [
+      { nodes: this.visibleIngressNodes, class: 'ingress' },
+      { nodes: this.visibleInternalNodes, class: 'internal' },
+      { nodes: this.visibleEgressNodes, class: 'egress' }
+    ]
   }
 
   private get visibleIngressNodes(): SimNode<N>[] {

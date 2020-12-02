@@ -2,7 +2,7 @@
   <div class="tree-ware-network-node-column">
     <tree-ware-network-node
       v-for="node in nodes"
-      ref="children"
+      ref="vueNodes"
       :key="node.id"
       :node="node"
       :content="nodeConfig.content"
@@ -31,11 +31,15 @@ export default class TreeWareNetworkNodeColumn<N> extends Vue {
   @Prop() readonly nodes!: SimNode<N>[]
   @Prop() readonly nodesElement!: Element
 
-  @Ref() readonly children!: TreeWareNetworkNode<N>[]
+  @Ref() readonly vueNodes!: TreeWareNetworkNode<N>[]
 
   updated() {
-    this.children?.forEach(child => {
-      child.updateSimNodeDomAttributes()
+    this.updateSimNodeDomAttributes()
+  }
+
+  updateSimNodeDomAttributes(nodesElement?: Element) {
+    this.vueNodes?.forEach(vueNode => {
+      vueNode.updateSimNodeDomAttributes(this.nodesElement || nodesElement)
     })
   }
 }

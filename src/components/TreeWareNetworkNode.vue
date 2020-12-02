@@ -24,8 +24,9 @@ export default class TreeWareNetworkNode<N> extends Vue {
   // Also, if a node's content changes, its `updated()` method as well as its
   // parent's `updated()` method is called.
   // Therefore this method is only called by the parent's `updated()` method.
-  updateSimNodeDomAttributes() {
-    const nodesRect = this.nodesElement.getBoundingClientRect()
+  updateSimNodeDomAttributes(nodesElement?: Element) {
+    const definedNodesElement = this.nodesElement || nodesElement
+    const nodesRect = definedNodesElement.getBoundingClientRect()
     const nodeRect = this.$el.getBoundingClientRect()
     this.node.x = nodeRect.left - nodesRect.left
     this.node.y = nodeRect.top - nodesRect.top
