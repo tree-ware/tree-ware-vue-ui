@@ -16,3 +16,11 @@ export function partition<T>(
   })
   return [passed, failed]
 }
+
+/**
+ * Returns the specified element in an array if it exists.
+ * Returns an empty array if the element does not exist.
+ */
+export function arrayIf<T>(element: T | undefined | null): T[] {
+  return element ? [element] : []
+}
