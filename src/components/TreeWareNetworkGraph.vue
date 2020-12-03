@@ -61,6 +61,8 @@ import { getPinnedLinks } from './TreeWareNetworkGraphPinned'
 import { LinkDirection, NodeType } from './TreeWareNetworkGraphTypes'
 import TreeWareNetworkLink from './TreeWareNetworkLink.vue'
 import TreeWareNetworkNodeColumn from './TreeWareNetworkNodeColumn.vue'
+import { ObjectSet } from '../utilities/ObjectSet'
+import { isNotUndefined } from '../utilities/predicates'
 
 type SimNodeMap<N> = { [nodeId: string]: SimNode<N> }
 
@@ -153,10 +155,10 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
   private get visibleSimGraph(): SimGraph<N, L> {
     return this.showDirections
       ? {
-          nodes: this.pinnedSimGraph.nodes.filter(this.filterNodeByDirection),
-          links: this.pinnedSimGraph.links.filter(this.filterLinkByDirection)
+          nodes: this.groupedSimGraph.nodes.filter(this.filterNodeByDirection),
+          links: this.groupedSimGraph.links.filter(this.filterLinkByDirection)
         }
-      : this.pinnedSimGraph
+      : this.groupedSimGraph
   }
 
   private get nodeCounts(): NodeCounts {
@@ -165,12 +167,34 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
       internal: 0,
       egress: 0
     }
-    this.pinnedSimGraph.nodes.forEach(simNode => {
+    this.groupedSimGraph.nodes.forEach(simNode => {
       if (simNode.nodeType & NodeType.INTERNAL) ++nodeCounts.internal
       else if (simNode.nodeType & NodeType.INGRESS) ++nodeCounts.ingress
       else if (simNode.nodeType & NodeType.EGRESS) ++nodeCounts.egress
     })
     return nodeCounts
+  }
+
+  private get groupedSimGraph(): SimGraph<N, L> {
+    // Create group links.
+    const groupLinksSet = new ObjectSet<SimLink<N, L>>(link => link.id)
+    this.pinnedSimGraph.links
+      .map(createGroupLink)
+      .filter(isNotUndefined)
+      .forEach(link => groupLinksSet.add(link))
+    const groupLinks = groupLinksSet.values()
+
+    // Get the group nodes from the above links.
+    const groupNodesSet = new ObjectSet<SimNode<N>>(node => node.id)
+    groupLinks.forEach(link =>
+      groupNodesSet.add(link.source.children ? link.source : link.target)
+    )
+    const groupNodes = groupNodesSet.values()
+
+    return {
+      nodes: [...this.pinnedSimGraph.nodes, ...groupNodes],
+      links: [...this.pinnedSimGraph.links, ...groupLinks]
+    }
   }
 
   private get pinnedSimGraph(): SimGraph<N, L> {
@@ -183,13 +207,8 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
     )
 
     let nodes: SimNode<N>[] = []
-    // Include all input nodes if there are no pinned nodes & no input links.
-    if (
-      !this.pinnedIngress &&
-      !this.pinnedInternal &&
-      !this.pinnedEgress &&
-      this.graph.links.length === 0
-    ) {
+    // Include all input nodes if there are no pinned nodes.
+    if (!this.pinnedIngress && !this.pinnedInternal && !this.pinnedEgress) {
       nodes = [...this.inputSimGraph.nodes]
     } else {
       // Include all pinned nodes.
@@ -210,7 +229,19 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
   }
 
   private get inputSimGraph(): SimGraph<N, L> {
-    const nodes: SimNode<N>[] = this.graph.nodes.map(nodeToSimNode)
+    const nodes: SimNode<N>[] = []
+    this.graph.nodes.forEach(node => {
+      const simNode = nodeToSimNode(node)
+      // Group nodes are included only after pinning calculations.
+      if (simNode.children === null) nodes.push(simNode)
+      node.children?.forEach(child => {
+        const childSimNode = nodeToSimNode(child)
+        childSimNode.parent = simNode
+        // TODO(deepak-nulu); don't add member nodes to the main graph.
+        nodes.push(childSimNode)
+        simNode.children?.push(childSimNode)
+      })
+    })
 
     const simNodeMap: SimNodeMap<N> = {}
     nodes.forEach(node => {
@@ -271,6 +302,27 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
   }
 }
 
+function createGroupLink<N, L>(link: SimLink<N, L>): SimLink<N, L> | undefined {
+  const sourceGroup = link.source.parent
+  const targetGroup = link.target.parent
+  if (sourceGroup) {
+    sourceGroup.nodeType = link.source.nodeType
+    return {
+      ...link,
+      id: getLinkId(sourceGroup, link.target, link.linkType),
+      source: sourceGroup
+    }
+  } else if (targetGroup) {
+    targetGroup.nodeType = link.target.nodeType
+    return {
+      ...link,
+      id: getLinkId(link.source, targetGroup, link.linkType),
+      target: targetGroup
+    }
+  }
+  return undefined
+}
+
 function addIfNewNode<N>(
   nodeIdSet: Set<string>,
   nodes: SimNode<N>[],
@@ -285,6 +337,8 @@ function nodeToSimNode<N>(node: Node<N>): SimNode<N> {
   // Objects in a list are not reactive. Vue.observable() makes them reactive.
   return Vue.observable({
     ...node,
+    children: node.children === null ? null : [],
+    parent: null,
     nodeType: node.isInternal ? NodeType.INTERNAL : NodeType.NONE,
     x: 0,
     y: 0,

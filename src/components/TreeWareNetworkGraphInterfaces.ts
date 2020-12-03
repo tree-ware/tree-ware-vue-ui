@@ -28,6 +28,7 @@ export interface Node<N> {
   isInternal: boolean
   data: N
   classes: string
+  children: Node<N>[] | null
 }
 
 export interface Link<L> {
@@ -50,6 +51,7 @@ export interface SimNode<N> extends Node<N>, d3.SimulationNodeDatum {
   width: number
   height: number
   isPinned: boolean
+  parent: SimNode<N> | null
 }
 
 export interface NodeCounts {
