@@ -7,6 +7,8 @@
       :node="node"
       :content="nodeConfig.content"
       :nodes-element="nodesElement"
+      @pin="$emit('pin', $event)"
+      @unpin="$emit('unpin', $event)"
       class="node"
     />
   </div>

@@ -37,6 +37,8 @@
         :node-config="config.node"
         :nodes="nodeColumn.nodes"
         :nodes-element="nodesDiv"
+        @pin="pinNode(index, $event)"
+        @unpin="unpinNode(index, $event)"
         :class="nodeColumn.class"
       />
     </div>
@@ -70,6 +72,10 @@ interface NodeColumn<N> {
   nodes: SimNode<N>[]
   class: string
 }
+
+const INGRESS_COLUMN_INDEX = 0
+const INTERNAL_COLUMN_INDEX = 1
+const EGRESS_COLUMN_INDEX = 2
 
 @Component({
   components: {
@@ -231,11 +237,11 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
   private get inputSimGraph(): SimGraph<N, L> {
     const nodes: SimNode<N>[] = []
     this.graph.nodes.forEach(node => {
-      const simNode = nodeToSimNode(node)
+      const simNode = nodeToSimNode(node, this.isPinned(node))
       // Group nodes are included only after pinning calculations.
       if (simNode.children === null) nodes.push(simNode)
       node.children?.forEach(child => {
-        const childSimNode = nodeToSimNode(child)
+        const childSimNode = nodeToSimNode(child, this.isPinned(child))
         childSimNode.parent = simNode
         // TODO(deepak-nulu); don't add member nodes to the main graph.
         nodes.push(childSimNode)
@@ -278,28 +284,49 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
   }
 
   private get pinnedIngress(): SimNode<N> | undefined {
-    return this.findPinned(NodeType.INGRESS)
+    return this.findPinned(INGRESS_COLUMN_INDEX)
   }
 
   private get pinnedInternal(): SimNode<N> | undefined {
-    return this.inputSimGraph.nodes.find(
-      node => node.isPinned && node.nodeType & NodeType.INTERNAL
-    )
+    return this.findPinned(INTERNAL_COLUMN_INDEX)
   }
 
   private get pinnedEgress(): SimNode<N> | undefined {
-    return this.findPinned(NodeType.EGRESS)
+    return this.findPinned(EGRESS_COLUMN_INDEX)
   }
 
-  private findPinned(nodeType: NodeType): SimNode<N> | undefined {
-    return this.inputSimGraph.nodes.find(
-      node => node.isPinned && node.nodeType === nodeType
-    )
+  private findPinned(columnIndex: number): SimNode<N> | undefined {
+    const pinnedId = this.pinnedNodeIds[columnIndex]
+    if (!pinnedId) return undefined
+    return this.inputSimGraph.nodes.find(node => node.id === pinnedId)
   }
 
   private get linkTypes(): Set<string> {
     return new Set<string>(this.graph.links.map(link => link.linkType))
   }
+
+  private pinNode(columnIndex: number, node: SimNode<N>) {
+    const oldPinnedNode = this.findPinned(columnIndex)
+    if (oldPinnedNode) oldPinnedNode.isPinned = false
+    node.isPinned = true
+    this.pinnedNodeIds.splice(columnIndex, 1, node.id)
+  }
+
+  private unpinNode(columnIndex: number, node: SimNode<N>) {
+    node.isPinned = false
+    this.pinnedNodeIds.splice(columnIndex, 1, undefined)
+  }
+
+  private isPinned(node: Node<N>): boolean {
+    if (!node.id) return false
+    return this.pinnedNodeIds.indexOf(node.id) > 0
+  }
+
+  private pinnedNodeIds: (string | undefined)[] = [
+    undefined,
+    undefined,
+    undefined
+  ]
 }
 
 function createGroupLink<N, L>(link: SimLink<N, L>): SimLink<N, L> | undefined {
@@ -333,7 +360,7 @@ function addIfNewNode<N>(
   nodeIdSet.add(node.id)
 }
 
-function nodeToSimNode<N>(node: Node<N>): SimNode<N> {
+function nodeToSimNode<N>(node: Node<N>, isPinned: boolean): SimNode<N> {
   // Objects in a list are not reactive. Vue.observable() makes them reactive.
   return Vue.observable({
     ...node,
@@ -344,7 +371,7 @@ function nodeToSimNode<N>(node: Node<N>): SimNode<N> {
     y: 0,
     width: 0,
     height: 0,
-    isPinned: false
+    isPinned
   })
 }
 

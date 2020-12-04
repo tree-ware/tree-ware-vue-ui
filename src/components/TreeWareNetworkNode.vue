@@ -1,6 +1,6 @@
 <template>
   <div>
-    <component :is="content" :node="node" @pin="node.isPinned = $event" />
+    <component :is="content" :node="node" @pin="emitPinOrUnpinEvent" />
   </div>
 </template>
 
@@ -15,6 +15,10 @@ export default class TreeWareNetworkNode<N> extends Vue {
   @Prop() readonly node!: SimNode<N>
   @Prop({ type: Function }) readonly content!: VueConstructor
   @Prop() readonly nodesElement!: Element
+
+  emitPinOrUnpinEvent(isPinned: boolean) {
+    this.$emit(isPinned ? 'pin' : 'unpin', this.node)
+  }
 
   // A component's `updated()` method is only called when the contents of the
   // component is changed. When the position of a component is changed (due
