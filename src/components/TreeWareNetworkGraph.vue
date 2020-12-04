@@ -158,7 +158,7 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
     )
   }
 
-  private get visibleSimGraph(): SimGraph<N, L> {
+  get visibleSimGraph(): SimGraph<N, L> {
     return this.showDirections
       ? {
           nodes: this.groupedSimGraph.nodes.filter(this.filterNodeByDirection),
