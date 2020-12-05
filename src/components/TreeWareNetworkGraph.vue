@@ -319,7 +319,7 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
 
   private isPinned(node: Node<N>): boolean {
     if (!node.id) return false
-    return this.pinnedNodeIds.indexOf(node.id) > 0
+    return this.pinnedNodeIds.includes(node.id)
   }
 
   private pinnedNodeIds: (string | undefined)[] = [
