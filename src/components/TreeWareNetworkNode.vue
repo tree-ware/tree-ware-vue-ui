@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div :class="nodeClasses">
     <component :is="content" :node="node" @pin="emitPinOrUnpinEvent" />
   </div>
 </template>
@@ -15,10 +15,6 @@ export default class TreeWareNetworkNode<N> extends Vue {
   @Prop() readonly node!: SimNode<N>
   @Prop({ type: Function }) readonly content!: VueConstructor
   @Prop() readonly nodesElement!: Element
-
-  emitPinOrUnpinEvent(isPinned: boolean) {
-    this.$emit(isPinned ? 'pin' : 'unpin', this.node)
-  }
 
   // A component's `updated()` method is only called when the contents of the
   // component is changed. When the position of a component is changed (due
@@ -37,5 +33,22 @@ export default class TreeWareNetworkNode<N> extends Vue {
     this.node.width = nodeRect.width
     this.node.height = nodeRect.height
   }
+
+  private get nodeClasses(): {}[] {
+    return [
+      'tree-ware-network-node',
+      this.node.classes ?? '',
+      {
+        highlighted: this.wasUnpinned
+      }
+    ]
+  }
+
+  private emitPinOrUnpinEvent(isPinned: boolean) {
+    if (!isPinned) this.wasUnpinned = true
+    this.$emit(isPinned ? 'pin' : 'unpin', this.node)
+  }
+
+  private wasUnpinned = false
 }
 </script>
