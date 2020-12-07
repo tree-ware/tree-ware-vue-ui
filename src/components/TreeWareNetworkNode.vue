@@ -1,6 +1,18 @@
 <template>
   <div :class="nodeClasses">
     <component :is="content" :node="node" @pin="emitPinOrUnpinEvent" />
+    <template v-if="isGroup">
+      <div class="group-title">{{ node.children.length }} members</div>
+      <VuePerfectScrollbar class="group-members">
+        <component
+          v-for="child in node.children"
+          :key="child.id"
+          :is="content"
+          :node="child"
+          :collapsed-group-member="true"
+        />
+      </VuePerfectScrollbar>
+    </template>
   </div>
 </template>
 
@@ -8,9 +20,14 @@
 import 'reflect-metadata'
 import { VueConstructor } from 'vue'
 import { Component, Prop, Vue } from 'vue-property-decorator'
+import VuePerfectScrollbar from 'vue-perfect-scrollbar'
 import { SimNode } from './TreeWareNetworkGraphInterfaces'
 
-@Component
+@Component({
+  components: {
+    VuePerfectScrollbar
+  }
+})
 export default class TreeWareNetworkNode<N> extends Vue {
   @Prop() readonly node!: SimNode<N>
   @Prop({ type: Function }) readonly content!: VueConstructor
@@ -44,6 +61,10 @@ export default class TreeWareNetworkNode<N> extends Vue {
     ]
   }
 
+  private get isGroup(): boolean {
+    return this.node.children !== null && this.node.children.length > 0
+  }
+
   private emitPinOrUnpinEvent(isPinned: boolean) {
     if (!isPinned) this.wasUnpinned = true
     this.$emit(isPinned ? 'pin' : 'unpin', this.node)
@@ -52,3 +73,19 @@ export default class TreeWareNetworkNode<N> extends Vue {
   private wasUnpinned = false
 }
 </script>
+
+<style lang="scss" scoped>
+.tree-ware-network-node {
+  .group-title {
+    border-top: solid 1px;
+    margin-bottom: 0.5rem;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+  }
+
+  .group-members {
+    position: relative;
+    max-height: 92px;
+  }
+}
+</style>
