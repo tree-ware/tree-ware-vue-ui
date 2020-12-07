@@ -161,10 +161,10 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
   get visibleSimGraph(): SimGraph<N, L> {
     return this.showDirections
       ? {
-          nodes: this.groupedSimGraph.nodes.filter(this.filterNodeByDirection),
-          links: this.groupedSimGraph.links.filter(this.filterLinkByDirection)
+          nodes: this.pinnedSimGraph.nodes.filter(this.filterNodeByDirection),
+          links: this.pinnedSimGraph.links.filter(this.filterLinkByDirection)
         }
-      : this.groupedSimGraph
+      : this.pinnedSimGraph
   }
 
   private get nodeCounts(): NodeCounts {
@@ -173,7 +173,7 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
       internal: 0,
       egress: 0
     }
-    this.groupedSimGraph.nodes.forEach(simNode => {
+    this.pinnedSimGraph.nodes.forEach(simNode => {
       if (simNode.nodeType & NodeType.INTERNAL) ++nodeCounts.internal
       else if (simNode.nodeType & NodeType.INGRESS) ++nodeCounts.ingress
       else if (simNode.nodeType & NodeType.EGRESS) ++nodeCounts.egress
@@ -181,32 +181,10 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
     return nodeCounts
   }
 
-  private get groupedSimGraph(): SimGraph<N, L> {
-    // Create group links.
-    const groupLinksSet = new ObjectSet<SimLink<N, L>>(link => link.id)
-    this.pinnedSimGraph.links
-      .map(createGroupLink)
-      .filter(isNotUndefined)
-      .forEach(link => groupLinksSet.add(link))
-    const groupLinks = groupLinksSet.values()
-
-    // Get the group nodes from the above links.
-    const groupNodesSet = new ObjectSet<SimNode<N>>(node => node.id)
-    groupLinks.forEach(link =>
-      groupNodesSet.add(link.source.children ? link.source : link.target)
-    )
-    const groupNodes = groupNodesSet.values()
-
-    return {
-      nodes: [...this.pinnedSimGraph.nodes, ...groupNodes],
-      links: [...this.pinnedSimGraph.links, ...groupLinks]
-    }
-  }
-
   private get pinnedSimGraph(): SimGraph<N, L> {
     // Compute links first since they determine nodes to include
     const links: SimLink<N, L>[] = getPinnedLinks(
-      this.inputSimGraph.links,
+      this.groupedLinksSimGraph.links,
       this.pinnedIngress,
       this.pinnedInternal,
       this.pinnedEgress
@@ -215,7 +193,7 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
     let nodes: SimNode<N>[] = []
     // Include all input nodes if there are no pinned nodes.
     if (!this.pinnedIngress && !this.pinnedInternal && !this.pinnedEgress) {
-      nodes = [...this.inputSimGraph.nodes]
+      nodes = [...this.groupedLinksSimGraph.nodes]
     } else {
       // Include all pinned nodes.
       const nodeIdSet = new Set<string>()
@@ -234,16 +212,41 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
     return { nodes, links }
   }
 
+  private get groupedLinksSimGraph(): SimGraph<N, L> {
+    // Create group links.
+    const groupLinksSet = new ObjectSet<SimLink<N, L>>(link => link.id)
+    this.inputSimGraph.links
+      .map(createGroupLink)
+      .filter(isNotUndefined)
+      .forEach(link => groupLinksSet.add(link))
+    const groupLinks = groupLinksSet.values()
+
+    // Drop children of collapsed group-nodes.
+    // NOTE: there is no property yet for indicating whether a group-node is
+    // expanded or collapsed. It defaults to collapsed.
+    const nodes = this.inputSimGraph.nodes.filter(node => node.parent === null)
+
+    // Drop links of children of collapsed group-nodes.
+    // NOTE: there is no property yet for indicating whether a group-node is
+    // expanded or collapsed. It defaults to collapsed.
+    const nonGroupLinks = this.inputSimGraph.links.filter(
+      link => link.source.parent === null && link.target.parent === null
+    )
+
+    return {
+      nodes,
+      links: [...nonGroupLinks, ...groupLinks]
+    }
+  }
+
   private get inputSimGraph(): SimGraph<N, L> {
     const nodes: SimNode<N>[] = []
     this.graph.nodes.forEach(node => {
       const simNode = nodeToSimNode(node, this.isPinned(node))
-      // Group nodes are included only after pinning calculations.
-      if (simNode.children === null) nodes.push(simNode)
+      nodes.push(simNode)
       node.children?.forEach(child => {
         const childSimNode = nodeToSimNode(child, this.isPinned(child))
         childSimNode.parent = simNode
-        // TODO(deepak-nulu); don't add member nodes to the main graph.
         nodes.push(childSimNode)
         simNode.children?.push(childSimNode)
       })
