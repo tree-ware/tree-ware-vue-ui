@@ -2,7 +2,7 @@
   <div :class="nodeClasses">
     <component :is="content" :node="node" @pin="emitPinOrUnpinEvent" />
     <template v-if="isGroup">
-      <div class="group-title">{{ node.children.length }} members</div>
+      <div class="group-title">{{ node.children.length }} countries</div>
       <VuePerfectScrollbar class="group-members">
         <component
           v-for="child in node.children"
