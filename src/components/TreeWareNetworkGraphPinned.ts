@@ -99,26 +99,10 @@ function getPinnedLinks001<N, L>(
   pinnedEgress: SimNode<N>
 ): SimLink<N, L>[] {
   // Include all egress links connected to the pinned egress node.
-  const pinnedLinks = inputSimLinks.filter(
+  return inputSimLinks.filter(
     link =>
       link.direction === LinkDirection.EGRESS && link.target === pinnedEgress
   )
-  // Include all ingress & internal links connected to internal nodes which
-  // are connected to the above egress links.
-  const internalNodes = pinnedLinks.map(link => link.source)
-  inputSimLinks
-    .filter(link =>
-      link.direction === LinkDirection.INGRESS
-        ? internalNodes.includes(link.target)
-        : link.direction === LinkDirection.INTERNAL
-        ? internalNodes.includes(link.source) ||
-          internalNodes.includes(link.target)
-        : false
-    )
-    .forEach(link => {
-      pinnedLinks.push(link)
-    })
-  return pinnedLinks
 }
 
 function getPinnedLinks010<N, L>(
@@ -177,26 +161,10 @@ function getPinnedLinks100<N, L>(
   pinnedEgress: undefined
 ): SimLink<N, L>[] {
   // Include all ingress links connected to the pinned ingress node.
-  const pinnedLinks = inputSimLinks.filter(
+  return inputSimLinks.filter(
     link =>
       link.direction === LinkDirection.INGRESS && link.source === pinnedIngress
   )
-  // Include all internal & egress links connected to internal nodes which
-  // are connected to the above ingress links.
-  const internalNodes = pinnedLinks.map(link => link.target)
-  inputSimLinks
-    .filter(link =>
-      link.direction === LinkDirection.INTERNAL
-        ? internalNodes.includes(link.source) ||
-          internalNodes.includes(link.target)
-        : link.direction === LinkDirection.EGRESS
-        ? internalNodes.includes(link.source)
-        : false
-    )
-    .forEach(link => {
-      pinnedLinks.push(link)
-    })
-  return pinnedLinks
 }
 
 function getPinnedLinks101<N, L>(
@@ -206,28 +174,13 @@ function getPinnedLinks101<N, L>(
   pinnedEgress: SimNode<N>
 ): SimLink<N, L>[] {
   // Include ingress & egress links connected to pinned ingress & egress nodes.
-  const pinnedLinks = inputSimLinks.filter(link =>
+  return inputSimLinks.filter(link =>
     link.direction === LinkDirection.INGRESS
       ? link.source === pinnedIngress
       : link.direction === LinkDirection.EGRESS
       ? link.target === pinnedEgress
       : false
   )
-  // Include all internal links connected to internal nodes of above links.
-  const internalNodes = pinnedLinks.map(link =>
-    link.direction === LinkDirection.INGRESS ? link.target : link.source
-  )
-  inputSimLinks
-    .filter(link =>
-      link.direction === LinkDirection.INTERNAL
-        ? internalNodes.includes(link.source) ||
-          internalNodes.includes(link.target)
-        : false
-    )
-    .forEach(link => {
-      pinnedLinks.push(link)
-    })
-  return pinnedLinks
 }
 
 function getPinnedLinks110<N, L>(
