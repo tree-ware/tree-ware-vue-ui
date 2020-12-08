@@ -101,7 +101,8 @@ function getPinnedLinks001<N, L>(
   // Include all egress links connected to the pinned egress node.
   return inputSimLinks.filter(
     link =>
-      link.direction === LinkDirection.EGRESS && link.target === pinnedEgress
+      link.direction === LinkDirection.EGRESS &&
+      isNodeOrParentPinned(link.target, pinnedEgress)
   )
 }
 
@@ -114,11 +115,12 @@ function getPinnedLinks010<N, L>(
   // Include all ingress and egress links connected to the pinned internal node.
   return inputSimLinks.filter(link =>
     link.direction === LinkDirection.INGRESS
-      ? link.target === pinnedInternal
+      ? isNodeOrParentPinned(link.target, pinnedInternal)
       : link.direction === LinkDirection.INTERNAL
-      ? link.source === pinnedInternal || link.target === pinnedInternal
+      ? isNodeOrParentPinned(link.source, pinnedInternal) ||
+        isNodeOrParentPinned(link.target, pinnedInternal)
       : link.direction === LinkDirection.EGRESS
-      ? link.source === pinnedInternal
+      ? isNodeOrParentPinned(link.source, pinnedInternal)
       : false
   )
 }
@@ -133,19 +135,19 @@ function getPinnedLinks011<N, L>(
   const pinnedLinks = inputSimLinks.filter(
     link =>
       link.direction === LinkDirection.EGRESS &&
-      link.source === pinnedInternal &&
-      link.target === pinnedEgress
+      isNodeOrParentPinned(link.source, pinnedInternal) &&
+      isNodeOrParentPinned(link.target, pinnedEgress)
   )
   // Include all ingress & internal links connected to internal nodes of above
   // egress links.
-  const internalNodes = pinnedLinks.map(link => link.source)
+  const internalNodeIds = pinnedLinks.map(link => link.source.id)
   inputSimLinks
     .filter(link =>
       link.direction === LinkDirection.INGRESS
-        ? internalNodes.includes(link.target)
+        ? includesNodeOrParent(internalNodeIds, link.target)
         : link.direction === LinkDirection.INTERNAL
-        ? internalNodes.includes(link.source) ||
-          internalNodes.includes(link.target)
+        ? includesNodeOrParent(internalNodeIds, link.source) ||
+          includesNodeOrParent(internalNodeIds, link.target)
         : false
     )
     .forEach(link => {
@@ -163,7 +165,8 @@ function getPinnedLinks100<N, L>(
   // Include all ingress links connected to the pinned ingress node.
   return inputSimLinks.filter(
     link =>
-      link.direction === LinkDirection.INGRESS && link.source === pinnedIngress
+      link.direction === LinkDirection.INGRESS &&
+      isNodeOrParentPinned(link.source, pinnedIngress)
   )
 }
 
@@ -176,9 +179,9 @@ function getPinnedLinks101<N, L>(
   // Include ingress & egress links connected to pinned ingress & egress nodes.
   return inputSimLinks.filter(link =>
     link.direction === LinkDirection.INGRESS
-      ? link.source === pinnedIngress
+      ? isNodeOrParentPinned(link.source, pinnedIngress)
       : link.direction === LinkDirection.EGRESS
-      ? link.target === pinnedEgress
+      ? isNodeOrParentPinned(link.target, pinnedEgress)
       : false
   )
 }
@@ -193,19 +196,19 @@ function getPinnedLinks110<N, L>(
   const pinnedLinks = inputSimLinks.filter(
     link =>
       link.direction === LinkDirection.INGRESS &&
-      link.source === pinnedIngress &&
-      link.target === pinnedInternal
+      isNodeOrParentPinned(link.source, pinnedIngress) &&
+      isNodeOrParentPinned(link.target, pinnedInternal)
   )
   // Include all internal & egress links connected to internal nodes of above
   // ingress links.
-  const internalNodes = pinnedLinks.map(link => link.target)
+  const internalNodeIds = pinnedLinks.map(link => link.target.id)
   inputSimLinks
     .filter(link =>
       link.direction === LinkDirection.INTERNAL
-        ? internalNodes.includes(link.source) ||
-          internalNodes.includes(link.target)
+        ? includesNodeOrParent(internalNodeIds, link.source) ||
+          includesNodeOrParent(internalNodeIds, link.target)
         : link.direction === LinkDirection.EGRESS
-        ? internalNodes.includes(link.source)
+        ? includesNodeOrParent(internalNodeIds, link.source)
         : false
     )
     .forEach(link => {
@@ -225,11 +228,34 @@ function getPinnedLinks111<N, L>(
   // internal node on one end.
   return inputSimLinks.filter(link =>
     link.direction === LinkDirection.INGRESS
-      ? link.source === pinnedIngress && link.target === pinnedInternal
+      ? isNodeOrParentPinned(link.source, pinnedIngress) &&
+        isNodeOrParentPinned(link.target, pinnedInternal)
       : link.direction === LinkDirection.INTERNAL
-      ? link.source === pinnedInternal || link.target === pinnedInternal
+      ? isNodeOrParentPinned(link.source, pinnedInternal) ||
+        isNodeOrParentPinned(link.target, pinnedInternal)
       : link.direction === LinkDirection.EGRESS
-      ? link.source === pinnedInternal && link.target === pinnedEgress
+      ? isNodeOrParentPinned(link.source, pinnedInternal) &&
+        isNodeOrParentPinned(link.target, pinnedEgress)
       : false
+  )
+}
+
+/** Returns true if the node or its collapsed parent is the pinned node. */
+function isNodeOrParentPinned<N>(
+  node: SimNode<N>,
+  pinned: SimNode<N>
+): boolean {
+  // NOTE: there is no property yet for indicating whether a group-node is
+  // expanded or collapsed. It defaults to collapsed.
+  return node.id === pinned.id || node.parent?.id === pinned.id
+}
+
+/** Returns true if the idList contains the node or its collapsed parent. */
+function includesNodeOrParent<N>(idList: string[], node: SimNode<N>): boolean {
+  // NOTE: there is no property yet for indicating whether a group-node is
+  // expanded or collapsed. It defaults to collapsed.
+  return (
+    idList.includes(node.id) ||
+    (node.parent !== null && idList.includes(node.parent.id))
   )
 }
