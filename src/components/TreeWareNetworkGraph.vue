@@ -63,6 +63,7 @@ import { getPinnedLinks } from './TreeWareNetworkGraphPinned'
 import { LinkDirection, NodeType } from './TreeWareNetworkGraphTypes'
 import TreeWareNetworkLink from './TreeWareNetworkLink.vue'
 import TreeWareNetworkNodeColumn from './TreeWareNetworkNodeColumn.vue'
+import { partition } from '../utilities/array'
 import { ObjectSet } from '../utilities/ObjectSet'
 import { isNotUndefined } from '../utilities/predicates'
 
@@ -161,10 +162,14 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
   get visibleSimGraph(): SimGraph<N, L> {
     return this.showDirections
       ? {
-          nodes: this.pinnedSimGraph.nodes.filter(this.filterNodeByDirection),
-          links: this.pinnedSimGraph.links.filter(this.filterLinkByDirection)
+          nodes: this.pinnedAndGroupedSimGraph.nodes.filter(
+            this.filterNodeByDirection
+          ),
+          links: this.pinnedAndGroupedSimGraph.links.filter(
+            this.filterLinkByDirection
+          )
         }
-      : this.pinnedSimGraph
+      : this.pinnedAndGroupedSimGraph
   }
 
   private get nodeCounts(): NodeCounts {
@@ -173,12 +178,44 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
       internal: 0,
       egress: 0
     }
-    this.pinnedSimGraph.nodes.forEach(simNode => {
+    this.pinnedAndGroupedSimGraph.nodes.forEach(simNode => {
       if (simNode.nodeType & NodeType.INTERNAL) ++nodeCounts.internal
       else if (simNode.nodeType & NodeType.INGRESS) ++nodeCounts.ingress
       else if (simNode.nodeType & NodeType.EGRESS) ++nodeCounts.egress
     })
     return nodeCounts
+  }
+
+  private get pinnedAndGroupedSimGraph(): SimGraph<N, L> {
+    // Drop children of collapsed group-nodes.
+    // NOTE: there is no property yet for indicating whether a group-node is
+    // expanded or collapsed. It defaults to collapsed.
+    const nodes = this.pinnedSimGraph.nodes.filter(node => node.parent === null)
+
+    // Drop links of children of collapsed group-nodes.
+    // NOTE: there is no property yet for indicating whether a group-node is
+    // expanded or collapsed. It defaults to collapsed.
+    const [parentLinks, droppedChildLinks] = partition(
+      this.pinnedSimGraph.links,
+      link => link.source.parent === null && link.target.parent === null
+    )
+
+    // Add dropped child nodes to their collapsed parent node. The parent
+    // node will show these children in a list. Note that these children are
+    // those that made it thru the pinned filters.
+    // TODO(deepak-nulu): ensure that the children list in parents are empty
+    droppedChildLinks.forEach(link => {
+      addChildToParent(link.source)
+      addChildToParent(link.target)
+    })
+
+    nodes.sort(this.config.node.compare)
+    // Sort children in collapsed groups.
+    // NOTE: there is no property yet for indicating whether a group-node is
+    // expanded or collapsed. It defaults to collapsed.
+    nodes.forEach(node => node.children?.sort(this.config.node.compare))
+
+    return { nodes, links: parentLinks }
   }
 
   private get pinnedSimGraph(): SimGraph<N, L> {
@@ -207,7 +244,6 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
         addIfNewNode(nodeIdSet, nodes, link.target)
       })
     }
-    nodes.sort(this.config.node.compare)
 
     return { nodes, links }
   }
@@ -221,21 +257,9 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
       .forEach(link => groupLinksSet.add(link))
     const groupLinks = groupLinksSet.values()
 
-    // Drop children of collapsed group-nodes.
-    // NOTE: there is no property yet for indicating whether a group-node is
-    // expanded or collapsed. It defaults to collapsed.
-    const nodes = this.inputSimGraph.nodes.filter(node => node.parent === null)
-
-    // Drop links of children of collapsed group-nodes.
-    // NOTE: there is no property yet for indicating whether a group-node is
-    // expanded or collapsed. It defaults to collapsed.
-    const nonGroupLinks = this.inputSimGraph.links.filter(
-      link => link.source.parent === null && link.target.parent === null
-    )
-
     return {
-      nodes,
-      links: [...nonGroupLinks, ...groupLinks]
+      nodes: this.inputSimGraph.nodes,
+      links: [...this.inputSimGraph.links, ...groupLinks]
     }
   }
 
@@ -248,7 +272,6 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
         const childSimNode = nodeToSimNode(child, this.isPinned(child))
         childSimNode.parent = simNode
         nodes.push(childSimNode)
-        simNode.children?.push(childSimNode)
       })
     })
 
@@ -351,6 +374,15 @@ function createGroupLink<N, L>(link: SimLink<N, L>): SimLink<N, L> | undefined {
     }
   }
   return undefined
+}
+
+function addChildToParent<N>(child: SimNode<N>) {
+  const parent = child.parent
+  if (parent === null) return
+  const children = parent.children
+  if (children === null) return
+  // TODO(deepak-nulu): use a set in the parent to avoid duplicates.
+  if (!children.find(node => node.id === child.id)) children.push(child)
 }
 
 function addIfNewNode<N>(
