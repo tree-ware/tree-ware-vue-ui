@@ -336,11 +336,13 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
     if (oldPinnedNode) oldPinnedNode.isPinned = false
     node.isPinned = true
     this.pinnedNodeIds.splice(columnIndex, 1, node.id)
+    this.$emit('pin')
   }
 
   private unpinNode(columnIndex: number, node: SimNode<N>) {
     node.isPinned = false
     this.pinnedNodeIds.splice(columnIndex, 1, undefined)
+    this.$emit('unpin')
   }
 
   private isPinned(node: Node<N>): boolean {
