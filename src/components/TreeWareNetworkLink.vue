@@ -24,10 +24,8 @@ export default class TreeWareNetworkLink<N, L> extends Vue {
   private toggleSelected() {
     if (!this.isSelectable) return
     if (this.link.link.selected) {
-      this.link.link.selected = false
       this.$emit('unselect', this.link.link)
     } else {
-      this.link.link.selected = true
       this.$emit('select', this.link.link)
     }
   }
