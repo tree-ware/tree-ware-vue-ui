@@ -23,29 +23,29 @@ export default class TreeWareNetworkLink<N, L> extends Vue {
 
   private toggleSelected() {
     if (!this.isSelectable) return
-    if (this.link.selected) {
-      this.link.selected = false
-      this.$emit('unselect', this.link)
+    if (this.link.link.selected) {
+      this.link.link.selected = false
+      this.$emit('unselect', this.link.link)
     } else {
-      this.link.selected = true
-      this.$emit('select', this.link)
+      this.link.link.selected = true
+      this.$emit('select', this.link.link)
     }
   }
 
   private get linkClasses(): {}[] {
     return [
       'link',
-      this.link.linkType,
-      this.link.classes ?? '',
+      this.link.link.linkType,
+      this.link.link.classes ?? '',
       {
         selectable: this.isSelectable,
-        selected: this.link.selected ?? false
+        selected: this.link.link.selected ?? false
       }
     ]
   }
 
   private get arrowHeadUrl(): string {
-    return `url(#${this.link.linkType})`
+    return `url(#${this.link.link.linkType})`
   }
 
   private get linkPaths(): [string, string] {
@@ -63,7 +63,7 @@ export default class TreeWareNetworkLink<N, L> extends Vue {
     // For internal nodes, the links should be on the right edge if the source
     // is above the target, and on the left edge if the source is below the
     // target.
-    if (this.link.source.isInternal && this.link.target.isInternal) {
+    if (this.link.source.node.isInternal && this.link.target.node.isInternal) {
       if (sourceY < targetY) targetX += targetWidth
       else sourceX -= sourceWidth
     }

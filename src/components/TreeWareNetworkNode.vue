@@ -1,14 +1,14 @@
 <template>
   <div :class="nodeClasses">
-    <component :is="content" :node="node" @pin="emitPinOrUnpinEvent" />
+    <component :is="content" :node="node.node" @pin="emitPinOrUnpinEvent" />
     <template v-if="isGroup">
       <div class="group-title">{{ node.children.length }} countries</div>
       <VuePerfectScrollbar class="group-members">
         <component
           v-for="child in node.children"
-          :key="child.id"
+          :key="child.node.id"
           :is="content"
-          :node="child"
+          :node="child.node"
           :collapsed-group-member="true"
         />
       </VuePerfectScrollbar>
@@ -54,7 +54,7 @@ export default class TreeWareNetworkNode<N> extends Vue {
   private get nodeClasses(): {}[] {
     return [
       'tree-ware-network-node',
-      this.node.classes ?? '',
+      this.node.node.classes ?? '',
       {
         highlighted: this.wasUnpinned
       }
@@ -62,7 +62,9 @@ export default class TreeWareNetworkNode<N> extends Vue {
   }
 
   private get isGroup(): boolean {
-    return this.node.children !== null && this.node.children.length > 0
+    return (
+      this.node.node.children !== null && this.node.node.children.length > 0
+    )
   }
 
   private emitPinOrUnpinEvent(isPinned: boolean) {

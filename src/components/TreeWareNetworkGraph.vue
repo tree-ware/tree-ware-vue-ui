@@ -23,7 +23,7 @@
         :key="link.id"
         :link="link"
         :link-shape="config.link.shape"
-        :is-selectable="allowSelectionForLinkTypes.includes(link.linkType)"
+        :is-selectable="allowSelectionForLinkTypes.includes(link.link.linkType)"
         @select="$emit('select', $event)"
         @unselect="$emit('unselect', $event)"
       />
@@ -204,20 +204,30 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
       link => link.source.parent === null && link.target.parent === null
     )
 
+    // Clear children lists so that only filtered children can be added below.
+    nodes.forEach(node => {
+      if (node.children) node.children = []
+    })
+
     // Add dropped child nodes to their collapsed parent node. The parent
     // node will show these children in a list. Note that these children are
     // those that made it thru the pinned filters.
-    // TODO(deepak-nulu): ensure that the children list in parents are empty
     droppedChildLinks.forEach(link => {
       addChildToParent(link.source)
       addChildToParent(link.target)
     })
 
-    nodes.sort(this.config.node.compare)
+    nodes.sort((a: SimNode<N>, b: SimNode<N>) =>
+      this.config.node.compare(a.node, b.node)
+    )
     // Sort children in collapsed groups.
     // NOTE: there is no property yet for indicating whether a group-node is
     // expanded or collapsed. It defaults to collapsed.
-    nodes.forEach(node => node.children?.sort(this.config.node.compare))
+    nodes.forEach(simNode =>
+      simNode.children?.sort((a: SimNode<N>, b: SimNode<N>) =>
+        this.config.node.compare(a.node, b.node)
+      )
+    )
 
     return { nodes, links: parentLinks }
   }
@@ -270,18 +280,18 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
   private get inputSimGraph(): SimGraph<N, L> {
     const nodes: SimNode<N>[] = []
     this.graph.nodes.forEach(node => {
-      const simNode = nodeToSimNode(node, this.isPinned(node))
+      const simNode = nodeToSimNode(node)
       nodes.push(simNode)
       node.children?.forEach(child => {
-        const childSimNode = nodeToSimNode(child, this.isPinned(child))
+        const childSimNode = nodeToSimNode(child)
         childSimNode.parent = simNode
         nodes.push(childSimNode)
       })
     })
 
     const simNodeMap: SimNodeMap<N> = {}
-    nodes.forEach(node => {
-      simNodeMap[node.id] = node
+    nodes.forEach(simNode => {
+      simNodeMap[simNode.node.id] = simNode
     })
 
     const links: SimLink<N, L>[] = this.graph.links.map(link =>
@@ -328,30 +338,27 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
   private findPinned(columnIndex: number): SimNode<N> | undefined {
     const pinnedId = this.pinnedNodeIds[columnIndex]
     if (!pinnedId) return undefined
-    return this.inputSimGraph.nodes.find(node => node.id === pinnedId)
+    return this.inputSimGraph.nodes.find(
+      simNode => simNode.node.id === pinnedId
+    )
   }
 
   private get linkTypes(): Set<string> {
     return new Set<string>(this.graph.links.map(link => link.linkType))
   }
 
-  private pinNode(columnIndex: number, node: SimNode<N>) {
+  private pinNode(columnIndex: number, simNode: SimNode<N>) {
     const oldPinnedNode = this.findPinned(columnIndex)
-    if (oldPinnedNode) oldPinnedNode.isPinned = false
-    node.isPinned = true
-    this.pinnedNodeIds.splice(columnIndex, 1, node.id)
+    if (oldPinnedNode) oldPinnedNode.node.isPinned = false
+    simNode.node.isPinned = true
+    this.pinnedNodeIds.splice(columnIndex, 1, simNode.node.id)
     this.$emit('pin')
   }
 
-  private unpinNode(columnIndex: number, node: SimNode<N>) {
-    node.isPinned = false
+  private unpinNode(columnIndex: number, simNode: SimNode<N>) {
+    simNode.node.isPinned = false
     this.pinnedNodeIds.splice(columnIndex, 1, undefined)
     this.$emit('unpin')
-  }
-
-  private isPinned(node: Node<N>): boolean {
-    if (!node.id) return false
-    return this.pinnedNodeIds.includes(node.id)
   }
 
   private pinnedNodeIds: (string | undefined)[] = [
@@ -361,21 +368,23 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
   ]
 }
 
-function createGroupLink<N, L>(link: SimLink<N, L>): SimLink<N, L> | undefined {
-  const sourceGroup = link.source.parent
-  const targetGroup = link.target.parent
+function createGroupLink<N, L>(
+  simLink: SimLink<N, L>
+): SimLink<N, L> | undefined {
+  const sourceGroup = simLink.source.parent
+  const targetGroup = simLink.target.parent
   if (sourceGroup) {
-    sourceGroup.nodeType = link.source.nodeType
+    sourceGroup.nodeType = simLink.source.nodeType
     return {
-      ...link,
-      id: getLinkId(sourceGroup, link.target, link.linkType),
+      ...simLink,
+      id: getLinkId(sourceGroup, simLink.target, simLink.link.linkType),
       source: sourceGroup
     }
   } else if (targetGroup) {
-    targetGroup.nodeType = link.target.nodeType
+    targetGroup.nodeType = simLink.target.nodeType
     return {
-      ...link,
-      id: getLinkId(link.source, targetGroup, link.linkType),
+      ...simLink,
+      id: getLinkId(simLink.source, targetGroup, simLink.link.linkType),
       target: targetGroup
     }
   }
@@ -388,31 +397,32 @@ function addChildToParent<N>(child: SimNode<N>) {
   const children = parent.children
   if (children === null) return
   // TODO(deepak-nulu): use a set in the parent to avoid duplicates.
-  if (!children.find(node => node.id === child.id)) children.push(child)
+  if (!children.find(simNode => simNode.node.id === child.node.id)) {
+    children.push(child)
+  }
 }
 
 function addIfNewNode<N>(
   nodeIdSet: Set<string>,
-  nodes: SimNode<N>[],
-  node: SimNode<N> | undefined
+  simNodes: SimNode<N>[],
+  simNode: SimNode<N> | undefined
 ) {
-  if (!node || nodeIdSet.has(node.id)) return
-  nodes.push(node)
-  nodeIdSet.add(node.id)
+  if (!simNode || nodeIdSet.has(simNode.node.id)) return
+  simNodes.push(simNode)
+  nodeIdSet.add(simNode.node.id)
 }
 
-function nodeToSimNode<N>(node: Node<N>, isPinned: boolean): SimNode<N> {
+function nodeToSimNode<N>(node: Node<N>): SimNode<N> {
   // Objects in a list are not reactive. Vue.observable() makes them reactive.
   return Vue.observable({
-    ...node,
+    node,
     children: node.children === null ? null : [],
     parent: null,
     nodeType: node.isInternal ? NodeType.INTERNAL : NodeType.NONE,
     x: 0,
     y: 0,
     width: 0,
-    height: 0,
-    isPinned
+    height: 0
   })
 }
 
@@ -422,13 +432,13 @@ function linkToSimLink<N, L>(
 ): SimLink<N, L> {
   const source = simNodeMap[link.sourceId]
   const target = simNodeMap[link.targetId]
-  if (!source.isInternal) {
+  if (!source.node.isInternal) {
     source.nodeType = NodeType.INGRESS
-    if (target.isInternal) target.nodeType |= NodeType.INGRESS
+    if (target.node.isInternal) target.nodeType |= NodeType.INGRESS
   }
-  if (!target.isInternal) {
+  if (!target.node.isInternal) {
     target.nodeType = NodeType.EGRESS
-    if (source.isInternal) source.nodeType |= NodeType.EGRESS
+    if (source.node.isInternal) source.nodeType |= NodeType.EGRESS
   }
   const direction =
     source.nodeType === NodeType.INGRESS
@@ -439,7 +449,7 @@ function linkToSimLink<N, L>(
   // TODO(deepak-nulu): handle the case where an external node is both ingress and egress.
   // Objects in a list are not reactive. Vue.observable() makes them reactive.
   return Vue.observable({
-    ...link,
+    link,
     id: getLinkId(source, target, link.linkType),
     direction,
     source,
@@ -452,7 +462,7 @@ function getLinkId<N>(
   target: SimNode<N>,
   linkType: string
 ): string {
-  return `${source.id}->${target.id}:${linkType}`
+  return `${source.node.id}->${target.node.id}:${linkType}`
 }
 </script>
 

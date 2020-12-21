@@ -9,7 +9,7 @@ export interface NetworkGraphNodeConfig<N> {
   /**
    * The Vue component to use for the node contents.
    * The Vue component instance will be passed a property named `node` of type
-   * `SimNode`. It should emit a boolean 'pin' event when it's pinned/unpinned.
+   * `Node<N>`. It should emit a boolean 'pin' event when it's pinned/unpinned.
    */
   content: VueConstructor
 }
@@ -26,6 +26,7 @@ export interface NetworkGraphConfig<N> {
 export interface Node<N> {
   id: string
   isInternal: boolean
+  isPinned: boolean
   data: N
   classes: string
   children: Node<N>[] | null
@@ -46,12 +47,13 @@ export interface Graph<N, L> {
   links: Link<L>[]
 }
 
-export interface SimNode<N> extends Node<N>, d3.SimulationNodeDatum {
+export interface SimNode<N> extends d3.SimulationNodeDatum {
   nodeType: NodeType
   width: number
   height: number
-  isPinned: boolean
   parent: SimNode<N> | null
+  children: SimNode<N>[] | null
+  node: Node<N>
 }
 
 export interface NodeCounts {
@@ -66,13 +68,12 @@ export interface ShowDirections {
   egress: boolean
 }
 
-export interface SimLink<N, L>
-  extends Link<L>,
-    d3.SimulationLinkDatum<SimNode<N>> {
+export interface SimLink<N, L> extends d3.SimulationLinkDatum<SimNode<N>> {
   id: string
   direction: LinkDirection
   source: SimNode<N>
   target: SimNode<N>
+  link: Link<L>
 }
 
 export interface SimGraph<N, L> {

@@ -140,7 +140,7 @@ function getPinnedLinks011<N, L>(
   )
   // Include all ingress & internal links connected to internal nodes of above
   // egress links.
-  const internalNodeIds = pinnedLinks.map(link => link.source.id)
+  const internalNodeIds = pinnedLinks.map(link => link.source.node.id)
   inputSimLinks
     .filter(link =>
       link.direction === LinkDirection.INGRESS
@@ -201,7 +201,7 @@ function getPinnedLinks110<N, L>(
   )
   // Include all internal & egress links connected to internal nodes of above
   // ingress links.
-  const internalNodeIds = pinnedLinks.map(link => link.target.id)
+  const internalNodeIds = pinnedLinks.map(link => link.target.node.id)
   inputSimLinks
     .filter(link =>
       link.direction === LinkDirection.INTERNAL
@@ -242,20 +242,26 @@ function getPinnedLinks111<N, L>(
 
 /** Returns true if the node or its collapsed parent is the pinned node. */
 function isNodeOrParentPinned<N>(
-  node: SimNode<N>,
+  simNode: SimNode<N>,
   pinned: SimNode<N>
 ): boolean {
   // NOTE: there is no property yet for indicating whether a group-node is
   // expanded or collapsed. It defaults to collapsed.
-  return node.id === pinned.id || node.parent?.id === pinned.id
+  return (
+    simNode.node.id === pinned.node.id ||
+    simNode.parent?.node.id === pinned.node.id
+  )
 }
 
 /** Returns true if the idList contains the node or its collapsed parent. */
-function includesNodeOrParent<N>(idList: string[], node: SimNode<N>): boolean {
+function includesNodeOrParent<N>(
+  idList: string[],
+  simNode: SimNode<N>
+): boolean {
   // NOTE: there is no property yet for indicating whether a group-node is
   // expanded or collapsed. It defaults to collapsed.
   return (
-    idList.includes(node.id) ||
-    (node.parent !== null && idList.includes(node.parent.id))
+    idList.includes(simNode.node.id) ||
+    (simNode.parent !== null && idList.includes(simNode.parent.node.id))
   )
 }
