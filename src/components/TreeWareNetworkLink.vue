@@ -34,7 +34,7 @@ export default class TreeWareNetworkLink<N, L> extends Vue {
     return [
       'link',
       this.link.link.linkType,
-      this.link.link.classes ?? '',
+      ...this.link.link.classes,
       {
         selectable: this.isSelectable,
         selected: this.link.link.selected ?? false

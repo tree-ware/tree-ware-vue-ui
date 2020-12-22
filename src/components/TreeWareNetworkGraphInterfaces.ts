@@ -28,7 +28,7 @@ export interface Node<N> {
   isInternal: boolean
   isPinned: boolean
   data: N
-  classes: string
+  classes: string[]
   children: Node<N>[] | null
 }
 
@@ -38,7 +38,7 @@ export interface Link<L> {
   /** Used as the arrowhead marker ID and as the class for the arrow lines. */
   linkType: string
   data: L
-  classes: string
+  classes: string[]
   selected: boolean
 }
 

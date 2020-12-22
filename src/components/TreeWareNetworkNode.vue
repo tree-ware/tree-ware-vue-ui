@@ -54,7 +54,7 @@ export default class TreeWareNetworkNode<N> extends Vue {
   private get nodeClasses(): {}[] {
     return [
       'tree-ware-network-node',
-      this.node.node.classes ?? '',
+      ...this.node.node.classes,
       {
         highlighted: this.wasUnpinned
       }
