@@ -3,7 +3,7 @@
     <tree-ware-network-node
       v-for="node in nodes"
       ref="vueNodes"
-      :key="node.id"
+      :key="node.node.id"
       :node="node"
       :content="nodeConfig.content"
       :nodes-element="nodesElement"
