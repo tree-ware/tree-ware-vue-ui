@@ -1,6 +1,6 @@
 <template>
   <div :class="nodeClasses">
-    <component :is="content" :node="node.node" @pin="emitPinOrUnpinEvent" />
+    <component :is="content" :node="node.node" @update:node="nodeUpdated" />
     <template v-if="isGroup">
       <div class="group-title">{{ node.children.length }} countries</div>
       <VuePerfectScrollbar class="group-members">
@@ -19,9 +19,9 @@
 <script lang="ts">
 import 'reflect-metadata'
 import { VueConstructor } from 'vue'
-import { Component, Prop, Vue } from 'vue-property-decorator'
+import { Component, Emit, Prop, Vue } from 'vue-property-decorator'
 import VuePerfectScrollbar from 'vue-perfect-scrollbar'
-import { SimNode } from './TreeWareNetworkGraphInterfaces'
+import { Node, SimNode } from './TreeWareNetworkGraphInterfaces'
 
 @Component({
   components: {
@@ -32,6 +32,13 @@ export default class TreeWareNetworkNode<N> extends Vue {
   @Prop() readonly node!: SimNode<N>
   @Prop({ type: Function }) readonly content!: VueConstructor
   @Prop() readonly nodesElement!: Element
+
+  @Emit('update:node')
+  private nodeUpdated(newNode: Node<N>) {
+    if (this.node.node.isPinned !== newNode.isPinned) {
+      if (!newNode.isPinned) this.wasUnpinned = true
+    }
+  }
 
   // A component's `updated()` method is only called when the contents of the
   // component is changed. When the position of a component is changed (due
@@ -65,11 +72,6 @@ export default class TreeWareNetworkNode<N> extends Vue {
     return (
       this.node.node.children !== null && this.node.node.children.length > 0
     )
-  }
-
-  private emitPinOrUnpinEvent(isPinned: boolean) {
-    if (!isPinned) this.wasUnpinned = true
-    this.$emit(isPinned ? 'pin' : 'unpin', this.node)
   }
 
   private wasUnpinned = false

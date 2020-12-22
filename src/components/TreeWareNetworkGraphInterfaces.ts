@@ -9,7 +9,8 @@ export interface NetworkGraphNodeConfig<N> {
   /**
    * The Vue component to use for the node contents.
    * The Vue component instance will be passed a property named `node` of type
-   * `Node<N>`. It should emit a boolean 'pin' event when it's pinned/unpinned.
+   * `Node<N>`. When it wants to change any attributes in `node`, it should
+   * emit a copy of `node` as a custom event named `update:node`.
    */
   content: VueConstructor
 }

@@ -7,8 +7,7 @@
       :node="node"
       :content="nodeConfig.content"
       :nodes-element="nodesElement"
-      @pin="$emit('pin', $event)"
-      @unpin="$emit('unpin', $event)"
+      @update:node="nodeUpdated"
       class="node"
     />
   </div>
@@ -16,9 +15,10 @@
 
 <script lang="ts">
 import 'reflect-metadata'
-import { Component, Prop, Ref, Vue } from 'vue-property-decorator'
+import { Component, Emit, Prop, Ref, Vue } from 'vue-property-decorator'
 import {
   NetworkGraphNodeConfig,
+  Node,
   SimNode
 } from './TreeWareNetworkGraphInterfaces'
 import TreeWareNetworkNode from './TreeWareNetworkNode.vue'
@@ -32,6 +32,9 @@ export default class TreeWareNetworkNodeColumn<N> extends Vue {
   @Prop() readonly nodeConfig!: NetworkGraphNodeConfig<N>
   @Prop() readonly nodes!: SimNode<N>[]
   @Prop() readonly nodesElement!: Element
+
+  @Emit('update:node')
+  private nodeUpdated(newNode: Node<N>) {}
 
   @Ref() readonly vueNodes!: TreeWareNetworkNode<N>[]
 
