@@ -24,5 +24,5 @@ export function addLink<N, L>(
 }
 
 export function getId(...parts: string[]): string {
-  return parts.join('-')
+  return parts.join('--')
 }
