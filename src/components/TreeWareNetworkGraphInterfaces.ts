@@ -48,6 +48,11 @@ export interface Graph<N, L> {
   links: Link<L>[]
 }
 
+export interface LookupGraph<N, L> extends Graph<N, L> {
+  nodeMap: { [id: string]: Node<N> }
+  linkMap: { [id: string]: Link<L> }
+}
+
 export interface SimNode<N> extends d3.SimulationNodeDatum {
   nodeType: NodeType
   width: number

@@ -1,4 +1,39 @@
-import { Graph, Link, Node } from './TreeWareNetworkGraphInterfaces'
+import {
+  Graph,
+  Link,
+  LookupGraph,
+  Node
+} from './TreeWareNetworkGraphInterfaces'
+
+export function newEmptyLookupGraph<N, L>(): LookupGraph<N, L> {
+  return {
+    nodes: [],
+    links: [],
+    nodeMap: {},
+    linkMap: {}
+  }
+}
+
+export function addNodeToLookupGraph<N, L>(
+  node: Node<N>,
+  graph: LookupGraph<N, L>
+): boolean {
+  if (graph.nodeMap[node.id]) return false
+  graph.nodeMap[node.id] = node
+  graph.nodes.push(node)
+  return true
+}
+
+export function addLinkToLookupGraph<N, L>(
+  link: Link<L>,
+  graph: LookupGraph<N, L>
+): boolean {
+  const linkId = getId(link.sourceId, link.targetId, link.linkType)
+  if (graph.linkMap[linkId]) return false
+  graph.linkMap[linkId] = link
+  graph.links.push(link)
+  return true
+}
 
 export function addNode<N, L>(
   node: Node<N>,
