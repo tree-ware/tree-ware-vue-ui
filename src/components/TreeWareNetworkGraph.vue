@@ -58,7 +58,7 @@ import {
   SimLink,
   SimNode
 } from './TreeWareNetworkGraphInterfaces'
-import { getPinnedLinks } from './TreeWareNetworkGraphPinned'
+import { getPinnedGraph } from './TreeWareNetworkGraphPinned'
 import { LinkDirection, NodeType } from './TreeWareNetworkGraphTypes'
 import TreeWareNetworkLink from './TreeWareNetworkLink.vue'
 import TreeWareNetworkNodeColumn from './TreeWareNetworkNodeColumn.vue'
@@ -231,33 +231,7 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
   }
 
   private get pinnedSimGraph(): SimGraph<N, L> {
-    // Compute links first since they determine nodes to include
-    const links: SimLink<N, L>[] = getPinnedLinks(
-      this.groupedLinksSimGraph.links,
-      this.pinnedIngress,
-      this.pinnedInternal,
-      this.pinnedEgress
-    )
-
-    let nodes: SimNode<N>[] = []
-    // Include all input nodes if there are no pinned nodes.
-    if (!this.pinnedIngress && !this.pinnedInternal && !this.pinnedEgress) {
-      nodes = [...this.groupedLinksSimGraph.nodes]
-    } else {
-      // Include all pinned nodes.
-      const nodeIdSet = new Set<string>()
-      addIfNewNode(nodeIdSet, nodes, this.pinnedIngress)
-      addIfNewNode(nodeIdSet, nodes, this.pinnedInternal)
-      addIfNewNode(nodeIdSet, nodes, this.pinnedEgress)
-
-      // Include all nodes from the pinned links.
-      links.forEach(link => {
-        addIfNewNode(nodeIdSet, nodes, link.source)
-        addIfNewNode(nodeIdSet, nodes, link.target)
-      })
-    }
-
-    return { nodes, links }
+    return getPinnedGraph(this.groupedLinksSimGraph)
   }
 
   private get groupedLinksSimGraph(): SimGraph<N, L> {
@@ -319,26 +293,6 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
       case LinkDirection.EGRESS:
         return this.showDirections?.egress ?? false
     }
-  }
-
-  private get pinnedIngress(): SimNode<N> | undefined {
-    return this.findPinned(NodeType.INGRESS)
-  }
-
-  private get pinnedInternal(): SimNode<N> | undefined {
-    return this.inputSimGraph.nodes.find(
-      simNode => simNode.node.isPinned && simNode.nodeType & NodeType.INTERNAL
-    )
-  }
-
-  private get pinnedEgress(): SimNode<N> | undefined {
-    return this.findPinned(NodeType.EGRESS)
-  }
-
-  private findPinned(nodeType: NodeType): SimNode<N> | undefined {
-    return this.inputSimGraph.nodes.find(
-      simNode => simNode.node.isPinned && simNode.nodeType === nodeType
-    )
   }
 
   private get linkTypes(): Set<string> {
