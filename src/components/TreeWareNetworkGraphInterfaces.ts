@@ -4,7 +4,6 @@ import { LinkDirection, LinkShape, NodeType } from './TreeWareNetworkGraphTypes'
 
 export interface NetworkGraphNodeConfig<N> {
   width: number
-  margin: number
   compare: (a: Node<N>, b: Node<N>) => number
   /**
    * The Vue component to use for the node contents.

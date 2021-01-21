@@ -1,5 +1,5 @@
 <template>
-  <div class="tree-ware-network-node-column">
+  <div class="tree-ware-network-node-column" :style="configStyle">
     <tree-ware-network-node
       v-for="node in nodes"
       ref="vueNodes"
@@ -9,6 +9,7 @@
       :nodes-element="nodesElement"
       @update:node="nodeUpdated"
       class="node"
+      :style="configStyle"
     />
   </div>
 </template>
@@ -38,6 +39,12 @@ export default class TreeWareNetworkNodeColumn<N> extends Vue {
 
   @Ref() readonly vueNodes!: TreeWareNetworkNode<N>[]
 
+  private get configStyle(): {} {
+    return {
+      width: `${this.nodeConfig.width}px`
+    }
+  }
+
   updated() {
     this.updateSimNodeDomAttributes()
   }
@@ -52,10 +59,7 @@ export default class TreeWareNetworkNodeColumn<N> extends Vue {
 
 <style lang="scss" scoped>
 .tree-ware-network-node-column {
-  width: 180px;
-
   .node {
-    width: 180px;
     margin-top: 30px;
 
     &:first-child {
