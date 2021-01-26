@@ -27,6 +27,7 @@ export interface Node<N> {
   id: string
   isInternal: boolean
   isPinned: boolean
+  wasPinned: boolean
   data: N
   classes: string[]
   children: Node<N>[] | null

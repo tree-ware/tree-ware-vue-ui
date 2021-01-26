@@ -19,8 +19,8 @@
 <script lang="ts">
 import 'reflect-metadata'
 import { VueConstructor } from 'vue'
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator'
 import VuePerfectScrollbar from 'vue-perfect-scrollbar'
+import { Component, Emit, Prop, Vue } from 'vue-property-decorator'
 import { Node, SimNode } from './TreeWareNetworkGraphInterfaces'
 
 @Component({
@@ -34,11 +34,7 @@ export default class TreeWareNetworkNode<N> extends Vue {
   @Prop() readonly nodesElement!: Element
 
   @Emit('update:node')
-  private nodeUpdated(newNode: Node<N>) {
-    if (this.node.node.isPinned !== newNode.isPinned) {
-      if (!newNode.isPinned) this.wasUnpinned = true
-    }
-  }
+  private nodeUpdated(newNode: Node<N>) {}
 
   // A component's `updated()` method is only called when the contents of the
   // component is changed. When the position of a component is changed (due
@@ -63,7 +59,7 @@ export default class TreeWareNetworkNode<N> extends Vue {
       'tree-ware-network-node',
       ...this.node.node.classes,
       {
-        highlighted: this.wasUnpinned
+        highlighted: this.node.node.wasPinned
       }
     ]
   }
@@ -73,8 +69,6 @@ export default class TreeWareNetworkNode<N> extends Vue {
       this.node.node.children !== null && this.node.node.children.length > 0
     )
   }
-
-  private wasUnpinned = false
 }
 </script>
 
