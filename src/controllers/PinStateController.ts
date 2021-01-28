@@ -3,7 +3,7 @@ import { Vue } from 'vue-property-decorator'
 export class PinStateController {
   constructor(private readonly setter: typeof Vue.set) {}
 
-  get pinCount(): number {
+  get pinnedCount(): number {
     return Object.values(this.nodePinStates).filter(
       nodePinState => nodePinState.isPinned
     ).length
