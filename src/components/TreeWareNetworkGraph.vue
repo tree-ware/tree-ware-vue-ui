@@ -47,6 +47,9 @@
 <script lang="ts">
 import 'reflect-metadata'
 import { Component, Emit, Prop, Ref, Vue, Watch } from 'vue-property-decorator'
+import { partition } from '../utilities/array'
+import { ObjectSet } from '../utilities/ObjectSet'
+import { isNotUndefined } from '../utilities/predicates'
 import {
   Graph,
   Link,
@@ -62,9 +65,6 @@ import { getPinnedGraph } from './TreeWareNetworkGraphPinned'
 import { LinkDirection, NodeType } from './TreeWareNetworkGraphTypes'
 import TreeWareNetworkLink from './TreeWareNetworkLink.vue'
 import TreeWareNetworkNodeColumn from './TreeWareNetworkNodeColumn.vue'
-import { partition } from '../utilities/array'
-import { ObjectSet } from '../utilities/ObjectSet'
-import { isNotUndefined } from '../utilities/predicates'
 
 type SimNodeMap<N> = { [nodeId: string]: SimNode<N> }
 
@@ -252,6 +252,7 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
   private get inputSimGraph(): SimGraph<N, L> {
     const nodes: SimNode<N>[] = []
     this.graph.nodes.forEach(node => {
+      if (node.isHidden) return
       const simNode = nodeToSimNode(node)
       nodes.push(simNode)
       node.children?.forEach(child => {
@@ -266,9 +267,9 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
       simNodeMap[simNode.node.id] = simNode
     })
 
-    const links: SimLink<N, L>[] = this.graph.links.map(link =>
-      linkToSimLink(simNodeMap, link)
-    )
+    const links: SimLink<N, L>[] = this.graph.links
+      .map(link => linkToSimLink(simNodeMap, link))
+      .filter(isNotUndefined)
 
     return { nodes, links }
   }
@@ -361,9 +362,11 @@ function nodeToSimNode<N>(node: Node<N>): SimNode<N> {
 function linkToSimLink<N, L>(
   simNodeMap: SimNodeMap<N>,
   link: Link<L>
-): SimLink<N, L> {
+): SimLink<N, L> | undefined {
   const source = simNodeMap[link.sourceId]
+  if (!source) return undefined
   const target = simNodeMap[link.targetId]
+  if (!target) return undefined
   if (!source.node.isInternal) {
     source.nodeType = NodeType.INGRESS
     if (target.node.isInternal) target.nodeType |= NodeType.INGRESS

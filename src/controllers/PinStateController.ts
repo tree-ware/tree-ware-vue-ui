@@ -9,6 +9,12 @@ export class PinStateController {
     ).length
   }
 
+  get pinnedNodeIds(): string[] {
+    return Object.entries(this.nodePinStates)
+      .filter(([_, pinState]) => pinState.isPinned)
+      .map(([nodeId, _]) => nodeId)
+  }
+
   getNodePinState(nodeId: string): NodePinState {
     const oldState = this.nodePinStates[nodeId]
     if (oldState) return oldState
