@@ -1,6 +1,11 @@
 <template>
   <div :class="nodeClasses">
-    <component :is="content" :node="node.node" @update:node="nodeUpdated" />
+    <component
+      :is="content"
+      :node="node.node"
+      @update:node="nodeUpdated"
+      @zoom:node="zoomNode"
+    />
     <template v-if="isGroup">
       <div class="group-title">{{ node.children.length }} countries</div>
       <VuePerfectScrollbar class="group-members">
@@ -35,6 +40,9 @@ export default class TreeWareNetworkNode<N> extends Vue {
 
   @Emit('update:node')
   private nodeUpdated(newNode: Node<N>) {}
+
+  @Emit('zoom:node')
+  private zoomNode(node: Node<N>) {}
 
   // A component's `updated()` method is only called when the contents of the
   // component is changed. When the position of a component is changed (due

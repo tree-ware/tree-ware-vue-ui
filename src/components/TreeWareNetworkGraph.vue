@@ -38,6 +38,7 @@
         :nodes="nodeColumn.nodes"
         :nodes-element="nodesDiv"
         @update:node="nodeUpdated"
+        @zoom:node="zoomNode"
         :class="nodeColumn.class"
       />
     </div>
@@ -88,6 +89,9 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
 
   @Emit('update:node')
   private nodeUpdated(newNode: Node<N>) {}
+
+  @Emit('zoom:node')
+  private zoomNode(node: Node<N>) {}
 
   @Ref() readonly nodesDiv!: HTMLDivElement
   @Ref() readonly nodeColumnsVue!: TreeWareNetworkNodeColumn<N>[]

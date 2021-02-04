@@ -8,6 +8,7 @@
       :content="nodeConfig.content"
       :nodes-element="nodesElement"
       @update:node="nodeUpdated"
+      @zoom:node="zoomNode"
       class="node"
       :style="configStyle"
     />
@@ -36,6 +37,9 @@ export default class TreeWareNetworkNodeColumn<N> extends Vue {
 
   @Emit('update:node')
   private nodeUpdated(newNode: Node<N>) {}
+
+  @Emit('zoom:node')
+  private zoomNode(node: Node<N>) {}
 
   @Ref() readonly vueNodes!: TreeWareNetworkNode<N>[]
 
