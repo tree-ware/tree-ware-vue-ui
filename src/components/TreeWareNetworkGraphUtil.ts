@@ -99,6 +99,6 @@ function updateNodeIsPinned<N>(node: Node<N>, isPinned: boolean) {
   node.isPinned = isPinned
 }
 
-export function getId(...parts: string[]): string {
+export function getId(...parts: any[]): string {
   return parts.join('--')
 }
