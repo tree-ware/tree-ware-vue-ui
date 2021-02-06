@@ -3,7 +3,7 @@
     <component
       :is="content"
       :node="node.node"
-      @update:node="nodeUpdated"
+      @update:node="updateNode"
       @zoom:node="zoomNode"
     />
     <template v-if="isGroup">
@@ -39,7 +39,7 @@ export default class TreeWareNetworkNode<N> extends Vue {
   @Prop() readonly nodesElement!: Element
 
   @Emit('update:node')
-  private nodeUpdated(newNode: Node<N>) {}
+  private updateNode(newNode: Node<N>) {}
 
   @Emit('zoom:node')
   private zoomNode(node: Node<N>) {}
