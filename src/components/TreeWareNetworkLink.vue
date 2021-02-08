@@ -6,9 +6,9 @@
 </template>
 
 <script lang="ts">
+import * as d3 from 'd3'
 import 'reflect-metadata'
 import { Component, Prop, Vue } from 'vue-property-decorator'
-import * as d3 from 'd3'
 import { SimLink } from './TreeWareNetworkGraphInterfaces'
 import { LinkShape } from './TreeWareNetworkGraphTypes'
 
@@ -21,6 +21,10 @@ export default class TreeWareNetworkLink<N, L> extends Vue {
   @Prop({ type: Number }) readonly linkShape!: LinkShape
   @Prop({ default: false }) readonly isSelectable!: boolean
   @Prop() readonly columnGap!: number
+
+  private get maxWidth(): number {
+    return Math.max(this.columnGap - 10, 0)
+  }
 
   private toggleSelected() {
     if (!this.isSelectable) return
@@ -89,20 +93,45 @@ export default class TreeWareNetworkLink<N, L> extends Vue {
 
     // At this point, the source and target are different nodes in the same
     // column. So render a curved link.
-
-    const dr = Math.sqrt(dx * dx + dy * dy)
-
-    // for len - 30-60-90 triangle rule, trig to calculate mid points
-    let len = dr - (dr / 2) * Math.sqrt(3)
-
-    midX = midX + (dy * len) / dr
-    midY = midY + (-dx * len) / dr
-
-    return [
-      generateArcDefinitionString(sourceX, sourceY, dr, midX, midY),
-      generateArcDefinitionString(midX, midY, dr, targetX, targetY)
-    ]
+    return getVerticalLinkPaths(sourceX, sourceY, targetY, this.maxWidth)
   }
+}
+
+function getVerticalLinkPaths(
+  x: number, // a single x value since this method only supports vertical links
+  sourceY: number,
+  targetY: number,
+  maxWidth: number
+): [string, string] {
+  // The overall link is the right or left half of an ellipse whose major axis
+  // is vertical and minor axis is horizontal. (x, sourceY) & (x, targetY) are
+  // the endpoints of the major axis. If sourceY is above targetY, the right
+  // half of the ellipse is used, else the left half of the ellipse is used.
+  // To allow arrowheads in the middle of the link, the ellipse half is again
+  // divided into two parts and returned as two separate paths.
+
+  const radiusY = Math.abs(targetY - sourceY) / 2
+  // Set the minor axis radius is set to 30% of the major axis radius.
+  // Limit the minor axis radius to maxWidth.
+  const radiusX = Math.min(radiusY * 0.3, maxWidth)
+
+  // We want to break the link in the middle in order to put an arrowhead in
+  // the middle. The midpoint of the link is the point where the minor axis of
+  // the ellipse intersects the ellipse. The midpoint is calculated from the
+  // location of the major axis endpoints and the minor axis radius.
+  // The side on which the midpoint lies depends on the direction we want the
+  // link to be (top-to-bottom or bottom-to-top).
+  const midX = sourceY < targetY ? x + radiusX : x - radiusX
+  const midY = sourceY < targetY ? sourceY + radiusY : sourceY - radiusY
+
+  const rotation = 0 // this method only supports vertical lines
+  const largeArc = 0 // we want the small arcs
+  const sweep = 1 // we want clockwise arcs
+
+  return [
+    `M ${x} ${sourceY} A ${radiusX} ${radiusY} ${rotation} ${largeArc} ${sweep} ${midX} ${midY}`,
+    `M ${midX} ${midY} A ${radiusX} ${radiusY} ${rotation} ${largeArc} ${sweep} ${x} ${targetY}`
+  ]
 }
 
 function generateLineDefinitionString(
@@ -112,29 +141,6 @@ function generateLineDefinitionString(
   targetY: Number
 ): string {
   return 'M' + sourceX + ',' + sourceY + 'L' + targetX + ',' + targetY
-}
-
-function generateArcDefinitionString(
-  sourceX: number,
-  sourceY: number,
-  radius: number,
-  targetX: number,
-  targetY: Number
-): string {
-  return (
-    'M' +
-    sourceX +
-    ',' +
-    sourceY +
-    'A' +
-    radius +
-    ',' +
-    radius +
-    ' 0 0,1 ' +
-    targetX +
-    ',' +
-    targetY
-  )
 }
 
 function getSelfReferentialLink(x: number, y: number): d3.Path {
