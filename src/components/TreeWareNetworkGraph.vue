@@ -24,6 +24,7 @@
         :link="link"
         :link-shape="config.link.shape"
         :is-selectable="allowSelectionForLinkTypes.includes(link.link.linkType)"
+        :column-gap="columnGap"
         @select="$emit('select', $event)"
         @unselect="$emit('unselect', $event)"
       />
@@ -130,6 +131,7 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
   }
 
   private redrawLinks() {
+    this.updatecolumnGap()
     this.updateSimNodeDomAttributes(this.nodesDiv)
   }
 
@@ -303,6 +305,14 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
   private get linkTypes(): Set<string> {
     return new Set<string>(this.graph.links.map(link => link.linkType))
   }
+
+  private updatecolumnGap() {
+    const column0 = this.nodeColumnsVue[0].$el.getBoundingClientRect()
+    const column1 = this.nodeColumnsVue[1].$el.getBoundingClientRect()
+    this.columnGap = column1.left - column0.left - column0.width
+  }
+
+  private columnGap: number = 100
 }
 
 function createGroupLink<N, L>(

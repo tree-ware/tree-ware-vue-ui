@@ -20,6 +20,7 @@ export default class TreeWareNetworkLink<N, L> extends Vue {
   @Prop() readonly link!: SimLink<N, L>
   @Prop({ type: Number }) readonly linkShape!: LinkShape
   @Prop({ default: false }) readonly isSelectable!: boolean
+  @Prop() readonly columnGap!: number
 
   private toggleSelected() {
     if (!this.isSelectable) return
