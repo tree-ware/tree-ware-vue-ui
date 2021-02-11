@@ -1,6 +1,11 @@
 import * as d3 from 'd3'
 import { VueConstructor } from 'vue'
-import { LinkDirection, LinkShape, NodeType } from './TreeWareNetworkGraphTypes'
+import {
+  CollapsedGroupChildrenMode,
+  LinkDirection,
+  LinkShape,
+  NodeType
+} from './TreeWareNetworkGraphTypes'
 
 export interface NetworkGraphNodeConfig<N> {
   width: number
@@ -31,7 +36,13 @@ export interface Node<N> {
   isHidden: boolean
   data: N
   classes: string[]
-  children: Node<N>[] | null
+  group: NodeGroup<N> | null
+}
+
+export interface NodeGroup<N> {
+  name: string
+  children: Node<N>[]
+  childrenMode: CollapsedGroupChildrenMode
 }
 
 export interface Link<L> {

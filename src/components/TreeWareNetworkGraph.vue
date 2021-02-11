@@ -64,7 +64,11 @@ import {
   SimNode
 } from './TreeWareNetworkGraphInterfaces'
 import { getPinnedGraph } from './TreeWareNetworkGraphPinned'
-import { LinkDirection, NodeType } from './TreeWareNetworkGraphTypes'
+import {
+  LinkDirection,
+  LINK_TYPE_GROUPED,
+  NodeType
+} from './TreeWareNetworkGraphTypes'
 import TreeWareNetworkLink from './TreeWareNetworkLink.vue'
 import TreeWareNetworkNodeColumn from './TreeWareNetworkNodeColumn.vue'
 
@@ -131,7 +135,7 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
   }
 
   private redrawLinks() {
-    this.updatecolumnGap()
+    this.updateColumnGap()
     this.updateSimNodeDomAttributes(this.nodesDiv)
   }
 
@@ -261,7 +265,7 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
       if (node.isHidden) return
       const simNode = nodeToSimNode(node)
       nodes.push(simNode)
-      node.children?.forEach(child => {
+      node.group?.children.forEach(child => {
         const childSimNode = nodeToSimNode(child)
         childSimNode.parent = simNode
         nodes.push(childSimNode)
@@ -306,7 +310,7 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
     return new Set<string>(this.graph.links.map(link => link.linkType))
   }
 
-  private updatecolumnGap() {
+  private updateColumnGap() {
     const column0 = this.nodeColumnsVue[0].$el.getBoundingClientRect()
     const column1 = this.nodeColumnsVue[1].$el.getBoundingClientRect()
     this.columnGap = column1.left - column0.left - column0.width
@@ -324,15 +328,23 @@ function createGroupLink<N, L>(
     sourceGroup.nodeType = simLink.source.nodeType
     return {
       ...simLink,
-      id: getLinkId(sourceGroup, simLink.target, simLink.link.linkType),
-      source: sourceGroup
+      id: getLinkId(sourceGroup, simLink.target, LINK_TYPE_GROUPED),
+      source: sourceGroup,
+      link: {
+        ...simLink.link,
+        linkType: LINK_TYPE_GROUPED
+      }
     }
   } else if (targetGroup) {
     targetGroup.nodeType = simLink.target.nodeType
     return {
       ...simLink,
-      id: getLinkId(simLink.source, targetGroup, simLink.link.linkType),
-      target: targetGroup
+      id: getLinkId(simLink.source, targetGroup, LINK_TYPE_GROUPED),
+      target: targetGroup,
+      link: {
+        ...simLink.link,
+        linkType: LINK_TYPE_GROUPED
+      }
     }
   }
   return undefined
@@ -363,7 +375,7 @@ function nodeToSimNode<N>(node: Node<N>): SimNode<N> {
   // Objects in a list are not reactive. Vue.observable() makes them reactive.
   return Vue.observable({
     node,
-    children: node.children === null ? null : [],
+    children: node.group === null ? null : [],
     parent: null,
     nodeType: node.isInternal ? NodeType.INTERNAL : NodeType.NONE,
     x: 0,

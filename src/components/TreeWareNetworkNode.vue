@@ -7,8 +7,10 @@
       @zoom:node="zoomNode"
     />
     <template v-if="isGroup">
-      <div class="group-title">{{ node.children.length }} countries</div>
-      <VuePerfectScrollbar class="group-members">
+      <div class="group-title">
+        {{ node.children.length }} {{ node.node.group.name }}
+      </div>
+      <VuePerfectScrollbar v-if="showChildren" class="group-members">
         <component
           v-for="child in node.children"
           :key="child.node.id"
@@ -27,6 +29,7 @@ import { VueConstructor } from 'vue'
 import VuePerfectScrollbar from 'vue-perfect-scrollbar'
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator'
 import { Node, SimNode } from './TreeWareNetworkGraphInterfaces'
+import { CollapsedGroupChildrenMode } from './TreeWareNetworkGraphTypes'
 
 @Component({
   components: {
@@ -73,8 +76,14 @@ export default class TreeWareNetworkNode<N> extends Vue {
   }
 
   private get isGroup(): boolean {
+    const childCount = this.node.node.group?.children.length ?? 0
+    return childCount > 0
+  }
+
+  private get showChildren(): boolean {
     return (
-      this.node.node.children !== null && this.node.node.children.length > 0
+      this.node.node.group?.childrenMode !==
+      CollapsedGroupChildrenMode.HIDE_CHILDREN
     )
   }
 }
