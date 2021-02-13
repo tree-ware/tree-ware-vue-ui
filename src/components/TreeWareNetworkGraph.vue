@@ -200,16 +200,16 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
 
   private get pinnedAndGroupedSimGraph(): SimGraph<N, L> {
     // Drop children of collapsed group-nodes.
-    // NOTE: there is no property yet for indicating whether a group-node is
-    // expanded or collapsed. It defaults to collapsed.
-    const nodes = this.pinnedSimGraph.nodes.filter(node => node.parent === null)
+    const nodes = this.pinnedSimGraph.nodes.filter(
+      node => !isInCollapsedGroup(node)
+    )
 
-    // Drop links of children of collapsed group-nodes.
-    // NOTE: there is no property yet for indicating whether a group-node is
-    // expanded or collapsed. It defaults to collapsed.
+    // Drop links of expanded group nodes and children of collapsed group-nodes.
     const [parentLinks, droppedChildLinks] = partition(
       this.pinnedSimGraph.links,
-      link => link.source.parent === null && link.target.parent === null
+      link =>
+        !isExpandedGroupOrInCollapsedGroup(link.source) &&
+        !isExpandedGroupOrInCollapsedGroup(link.target)
     )
 
     // Clear children lists so that only filtered children can be added below.
@@ -229,8 +229,6 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
       this.config.node.compare(a.node, b.node)
     )
     // Sort children in collapsed groups.
-    // NOTE: there is no property yet for indicating whether a group-node is
-    // expanded or collapsed. It defaults to collapsed.
     nodes.forEach(simNode =>
       simNode.children?.sort((a: SimNode<N>, b: SimNode<N>) =>
         this.config.node.compare(a.node, b.node)
@@ -317,6 +315,18 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
   }
 
   private columnGap: number = 100
+}
+
+export function isInCollapsedGroup<N>(simNode: SimNode<N>): boolean {
+  const parentSimNode = simNode.parent
+  if (!parentSimNode) return false // not in a group
+  return !parentSimNode.node.isExpanded
+}
+
+export function isExpandedGroupOrInCollapsedGroup<N>(
+  simNode: SimNode<N>
+): boolean {
+  return simNode.node.isExpanded || isInCollapsedGroup(simNode)
 }
 
 function createGroupLink<N, L>(

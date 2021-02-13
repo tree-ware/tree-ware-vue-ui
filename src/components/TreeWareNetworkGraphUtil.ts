@@ -72,19 +72,14 @@ export function getHiddenCount<N, L>(graph: Graph<N, L>): number {
   )
 }
 
-export function updateIsPinned<N, L>(
-  graph: LookupGraph<N, L>,
-  nodeId: string,
-  isPinned: boolean
-) {
-  const node = graph.nodeMap[nodeId]
-  if (!node) return
-  updateNodeIsPinned(node, isPinned)
+export function updateIsPinned<N>(node: Node<N>, isPinned: boolean) {
+  node.wasPinned = node.wasPinned || node.isPinned
+  node.isPinned = isPinned
 }
 
 export function unpinAll<N, L>(graph: LookupGraph<N, L>) {
   graph.nodes.forEach(node => {
-    updateNodeIsPinned(node, false)
+    updateIsPinned(node, false)
   })
 }
 
@@ -92,11 +87,6 @@ export function unhideAll<N, L>(graph: LookupGraph<N, L>) {
   graph.nodes.forEach(node => {
     node.isHidden = false
   })
-}
-
-function updateNodeIsPinned<N>(node: Node<N>, isPinned: boolean) {
-  node.wasPinned = node.wasPinned || node.isPinned
-  node.isPinned = isPinned
 }
 
 export function getId(...parts: any[]): string {

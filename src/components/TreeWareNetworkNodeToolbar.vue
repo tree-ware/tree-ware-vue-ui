@@ -16,6 +16,20 @@
           </a>
         </vx-tooltip>
 
+        <vx-tooltip
+          v-if="config.expand"
+          :text="expandTooltip"
+          class="inline mr-2"
+        >
+          <a @click="config.expand.onClick">
+            <vs-icon
+              :icon="expandIcon"
+              icon-pack="fas"
+              color="primary"
+            ></vs-icon>
+          </a>
+        </vx-tooltip>
+
         <!-- <vx-tooltip v-if="config.zoom" :text="config.zoom.tooltip" class="inline mr-2"> -->
         <a v-if="config.zoom" @click="config.zoom.onClick" class="mr-2">
           <vs-icon
@@ -66,7 +80,16 @@ export default class TreeWareNetworkNodeToolbar extends Vue {
   @Prop({ default: () => {} })
   readonly config!: TreeWareNetworkNodeToolbarConfig
   @Prop({ default: false }) readonly isPinned!: boolean
+  @Prop({ default: false }) readonly isExpanded!: boolean
   @Prop({ default: 0 }) readonly alertCount!: number
+
+  private get expandTooltip(): string {
+    return this.isExpanded ? 'Collapse this group' : 'Expand this group'
+  }
+
+  private get expandIcon(): string {
+    return this.isExpanded ? 'fa-chevron-up' : 'fa-chevron-down'
+  }
 }
 </script>
 

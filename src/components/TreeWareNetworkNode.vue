@@ -8,7 +8,8 @@
     />
     <template v-if="isGroup">
       <div class="group-title">
-        {{ node.children.length }} {{ node.node.group.name }}
+        <span v-if="!node.node.isExpanded">{{ node.children.length }}</span>
+        {{ node.node.group.name }}
       </div>
       <VuePerfectScrollbar v-if="showChildren" class="group-members">
         <component
@@ -83,7 +84,7 @@ export default class TreeWareNetworkNode<N> extends Vue {
   private get showChildren(): boolean {
     return (
       this.node.node.group?.childrenMode !==
-      CollapsedGroupChildrenMode.HIDE_CHILDREN
+        CollapsedGroupChildrenMode.HIDE_CHILDREN && !this.node.node.isExpanded
     )
   }
 }

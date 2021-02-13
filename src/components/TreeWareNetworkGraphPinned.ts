@@ -9,8 +9,8 @@ export function getPinnedGraph<N, L>(simGraph: SimGraph<N, L>): SimGraph<N, L> {
   // Gather the set of links that are connected to pinned nodes.
   const pinnedSimLinks = simGraph.links.filter(
     simLink =>
-      isNodeOrParentPinned(simLink.source) ||
-      isNodeOrParentPinned(simLink.target)
+      isNodeOrCollapsedParentPinned(simLink.source) ||
+      isNodeOrCollapsedParentPinned(simLink.target)
   )
 
   // Return a copy of the input graph if there are no pinned nodes.
@@ -28,9 +28,9 @@ export function getPinnedGraph<N, L>(simGraph: SimGraph<N, L>): SimGraph<N, L> {
   return { nodes: nodeSet.values(), links: pinnedSimLinks }
 }
 
-/** Returns true if the node or its collapsed parent is the pinned node. */
-function isNodeOrParentPinned<N>(simNode: SimNode<N>): boolean {
-  // NOTE: there is no property yet for indicating whether a group-node is
-  // expanded or collapsed. It defaults to collapsed.
-  return simNode.node.isPinned || (simNode.parent?.node.isPinned ?? false)
+function isNodeOrCollapsedParentPinned<N>(simNode: SimNode<N>): boolean {
+  if (simNode.node.isPinned) return true
+  if (!simNode.parent) return false
+  if (simNode.parent.node.isExpanded) return false // parent is not collapsed
+  return simNode.parent.node.isPinned
 }

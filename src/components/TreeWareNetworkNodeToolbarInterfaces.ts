@@ -7,6 +7,7 @@ export interface TreeWareNetworkNodeToolbarConfig {
   pin?: TreeWareNetworkNodeToolbarButtonConfig
   pinnedPinColor?: string
   zoom?: TreeWareNetworkNodeToolbarButtonConfig
+  expand?: TreeWareNetworkNodeToolbarButtonConfig
   alertCount?: TreeWareNetworkNodeToolbarButtonConfig
   log?: TreeWareNetworkNodeToolbarButtonConfig
 }
