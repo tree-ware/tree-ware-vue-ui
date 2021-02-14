@@ -61,8 +61,6 @@
         {{ alertCount }}
       </vs-chip>
     </vx-tooltip>
-
-    <slot class="m-1" />
   </div>
 </template>
 
