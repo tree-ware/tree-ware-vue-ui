@@ -92,6 +92,8 @@ export default class TreeWareNetworkNode<N> extends Vue {
 
 <style lang="scss" scoped>
 .tree-ware-network-node {
+  position: relative;
+
   .group-title {
     border-top: solid 1px;
     margin-bottom: 0.5rem;
@@ -100,7 +102,6 @@ export default class TreeWareNetworkNode<N> extends Vue {
   }
 
   .group-members {
-    position: relative;
     max-height: 92px;
   }
 }

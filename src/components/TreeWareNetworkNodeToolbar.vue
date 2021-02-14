@@ -95,8 +95,6 @@ export default class TreeWareNetworkNodeToolbar extends Vue {
 
 <style lang="scss" scoped>
 .tree-ware-network-node-toolbar {
-  position: relative;
-
   .toolbar {
     display: flex;
 
@@ -121,8 +119,8 @@ export default class TreeWareNetworkNodeToolbar extends Vue {
 
   .alert-count {
     position: absolute;
-    right: -1.5rem;
-    top: -1.5rem;
+    right: -1.1rem;
+    top: -1rem;
   }
 
   ::v-deep {
