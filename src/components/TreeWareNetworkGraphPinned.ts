@@ -25,6 +25,22 @@ export function getPinnedGraph<N, L>(simGraph: SimGraph<N, L>): SimGraph<N, L> {
     nodeSet.add(simLink.source)
     nodeSet.add(simLink.target)
   })
+
+  // For pinned and expanded groups, include all children if none are pinned.
+  simGraph.nodes.forEach(simNode => {
+    if (!simNode.node.isPinned) return
+    if (!simNode.node.group) return
+    if (!simNode.node.group.isExpanded) return
+    const hasPinnedChild = simNode.node.group.children.some(
+      child => child.isPinned
+    )
+    if (hasPinnedChild) return
+    simNode.allChildren?.forEach(simChild => {
+      if (simChild.node.isHidden) return
+      nodeSet.add(simChild)
+    })
+  })
+
   return { nodes: nodeSet.values(), links: pinnedSimLinks }
 }
 

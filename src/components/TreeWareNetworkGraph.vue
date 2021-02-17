@@ -258,18 +258,23 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
   }
 
   private get inputSimGraph(): SimGraph<N, L> {
-    const nodes: SimNode<N>[] = []
+    // Create SimNode instances for all Node instances in the graph.
+    const allNodes = new ObjectSet<SimNode<N>>(simNode => simNode.node.id)
     this.graph.nodes.forEach(node => {
-      if (node.isHidden) return
       const simNode = nodeToSimNode(node)
-      nodes.push(simNode)
+      allNodes.add(simNode)
       node.group?.children.forEach(child => {
-        const childSimNode = nodeToSimNode(child)
+        const childSimNode = allNodes.get(child.id) ?? nodeToSimNode(child)
         childSimNode.parent = simNode
-        nodes.push(childSimNode)
+        simNode.allChildren?.push(childSimNode)
+        allNodes.add(childSimNode)
       })
     })
 
+    // Drop hidden nodes.
+    const nodes = allNodes
+      .values()
+      .filter(node => !node.node.isHidden && !node.parent?.node.isHidden)
     const simNodeMap: SimNodeMap<N> = {}
     nodes.forEach(simNode => {
       simNodeMap[simNode.node.id] = simNode
@@ -386,6 +391,7 @@ function nodeToSimNode<N>(node: Node<N>): SimNode<N> {
   return Vue.observable({
     node,
     children: node.group === null ? null : [],
+    allChildren: node.group === null ? null : [],
     parent: null,
     nodeType: node.isInternal ? NodeType.INTERNAL : NodeType.NONE,
     x: 0,

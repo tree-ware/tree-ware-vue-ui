@@ -23,6 +23,10 @@ export class ObjectSet<T> {
     return true
   }
 
+  get(id: string): T | undefined {
+    return this.set[id]
+  }
+
   clear() {
     this.set = {}
   }

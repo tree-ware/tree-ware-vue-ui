@@ -72,6 +72,7 @@ export interface SimNode<N> extends d3.SimulationNodeDatum {
   height: number
   parent: SimNode<N> | null
   children: SimNode<N>[] | null
+  allChildren: SimNode<N>[] | null // includes filtered-out children
   node: Node<N>
 }
 
