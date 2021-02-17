@@ -33,7 +33,6 @@ export interface Node<N> {
   isInternal: boolean
   isPinned: boolean
   wasPinned: boolean
-  isExpanded: boolean
   isHidden: boolean
   data: N
   classes: string[]
@@ -44,6 +43,7 @@ export interface NodeGroup<N> {
   name: string
   children: Node<N>[]
   childrenMode: CollapsedGroupChildrenMode
+  isExpanded: boolean
 }
 
 export interface Link<L> {

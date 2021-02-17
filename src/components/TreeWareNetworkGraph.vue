@@ -320,13 +320,13 @@ export default class TreeWareNetworkGraph<N, L> extends Vue {
 export function isInCollapsedGroup<N>(simNode: SimNode<N>): boolean {
   const parentSimNode = simNode.parent
   if (!parentSimNode) return false // not in a group
-  return !parentSimNode.node.isExpanded
+  return !parentSimNode.node.group?.isExpanded
 }
 
 export function isExpandedGroupOrInCollapsedGroup<N>(
   simNode: SimNode<N>
 ): boolean {
-  return simNode.node.isExpanded || isInCollapsedGroup(simNode)
+  return simNode.node.group?.isExpanded || isInCollapsedGroup(simNode)
 }
 
 function createGroupLink<N, L>(

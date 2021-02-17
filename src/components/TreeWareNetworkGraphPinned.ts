@@ -31,6 +31,6 @@ export function getPinnedGraph<N, L>(simGraph: SimGraph<N, L>): SimGraph<N, L> {
 function isNodeOrCollapsedParentPinned<N>(simNode: SimNode<N>): boolean {
   if (simNode.node.isPinned) return true
   if (!simNode.parent) return false
-  if (simNode.parent.node.isExpanded) return false // parent is not collapsed
+  if (simNode.parent.node.group?.isExpanded) return false // parent is not collapsed
   return simNode.parent.node.isPinned
 }
