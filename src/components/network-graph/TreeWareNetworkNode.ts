@@ -1,0 +1,38 @@
+import { VueConstructor } from 'vue'
+
+// The Vue component instance (for `expandedContent` & `collapsedContent`)
+// will be passed a property named `node` of type `TreeWareNetworkNode`.
+// When it wants to change any attributes in `node`, it should emit a copy
+// of `node` as a custom event named `update:node`.
+
+export interface TreeWareNetworkNodeUserState {
+  isPinned: boolean
+  isHidden: boolean
+  isExpanded: boolean
+}
+
+export interface TreeWareNetworkNodeUserControl {
+  canPin: boolean
+  canHide: boolean
+  canExpand: boolean
+}
+
+export interface TreeWareNetworkNodeRenderState {}
+
+export interface TreeWareNetworkNode
+  extends TreeWareNetworkNodeUserState,
+    TreeWareNetworkNodeUserControl,
+    TreeWareNetworkNodeRenderState {
+  id: string
+  parent: TreeWareNetworkNode | null
+  group: TreeWareNetworkNodeGroup | null
+  classes: string[]
+  expandedContent: VueConstructor
+  collapsedContent: VueConstructor | null
+  data: any // different nodes in the same graph can have different data types
+}
+
+export interface TreeWareNetworkNodeGroup {
+  name: string
+  children: TreeWareNetworkNode[]
+}
