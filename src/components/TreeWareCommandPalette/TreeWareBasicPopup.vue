@@ -12,7 +12,7 @@ import { Component, Vue, Prop } from 'vue-property-decorator'
 
 @Component
 export default class TreeWareBasicPopup extends Vue {
-  @Prop({ default: false }) show!: boolean
+  @Prop({ default: false }) readonly show!: boolean
 }
 </script>
 <style lang="scss" scoped>

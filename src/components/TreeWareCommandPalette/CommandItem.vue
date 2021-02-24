@@ -5,8 +5,8 @@
     :class="{ 'bg-primary': isSelected }"
   >
     <div class="category">
-      <vs-chip color="warning">
-        Category
+      <vs-chip :color="commandCategoryMap[commandItemData.category].color">
+        {{ commandCategoryMap[commandItemData.category].name }}
       </vs-chip>
     </div>
     <div class="label">
@@ -18,12 +18,14 @@
 <script lang="ts">
 import 'reflect-metadata'
 import { Component, Vue, Ref, Prop, Emit } from 'vue-property-decorator'
-import CommandItemData from './CommandItemData'
+import { CommandCategoryMap, CommandItemData } from './CommandItemData'
 
 @Component
 export default class CommandItem extends Vue {
   @Prop() readonly commandItemData!: CommandItemData
   @Prop() readonly selectedItem!: CommandItemData
+  @Prop() readonly commandCategoryMap!: CommandCategoryMap
+
   @Emit() itemSelect(command: CommandItemData) {}
   get isSelected(): boolean {
     return this.commandItemData === this.selectedItem

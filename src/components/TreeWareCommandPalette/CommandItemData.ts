@@ -1,5 +1,14 @@
-export default interface CommandItemData {
+export interface CommandItemData {
   description: string
-  categoryId: number
-  action: string
+  category: number
+  action: number
+}
+
+export interface CommandCategory {
+  name: string
+  color: string
+}
+
+export interface CommandCategoryMap {
+  [category: number]: CommandCategory
 }

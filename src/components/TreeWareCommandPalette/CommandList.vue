@@ -8,6 +8,7 @@
         v-for="(command, index) in commandItemDataList"
         :selectedItem="selectedItem"
         :commandItemData="command"
+        :commandCategoryMap="commandCategoryMap"
         @item-select="itemSelectFromClick($event, index)"
         :key="index"
       />
@@ -23,7 +24,7 @@ import { keys } from 'd3'
 import 'reflect-metadata'
 import { Component, Vue, Prop, Watch, Emit } from 'vue-property-decorator'
 import CommandItem from './CommandItem.vue'
-import CommandItemData from './CommandItemData'
+import { CommandItemData, CommandCategoryMap } from './CommandItemData'
 
 const KEY_ARROW_UP = 'ArrowUp'
 const KEY_ARROW_DOWN = 'ArrowDown'
@@ -35,7 +36,9 @@ const KEY_ENTER = 'Enter'
   }
 })
 export default class CommandList extends Vue {
-  @Prop() commandItemDataList!: CommandItemData[]
+  @Prop() readonly commandItemDataList!: CommandItemData[]
+  @Prop() readonly commandCategoryMap!: CommandCategoryMap
+
   @Emit() apply(command: CommandItemData) {}
 
   @Watch('commandItemDataList.length')

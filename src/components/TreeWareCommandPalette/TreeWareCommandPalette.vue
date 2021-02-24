@@ -3,7 +3,11 @@
     <div>
       <palette-header />
       <palette-input @change="searchStringChange" />
-      <command-list :commandItemDataList="commandFilteredList" @apply="apply" />
+      <command-list
+        :commandItemDataList="commandFilteredList"
+        :commandCategoryMap="commandCategoryMap"
+        @apply="apply"
+      />
     </div>
   </tree-ware-basic-popup>
 </template>
@@ -14,7 +18,7 @@ import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
 import PaletteInput from './PaletteInput.vue'
 import PaletteHeader from './PaletteHeader.vue'
 import CommandList from './CommandList.vue'
-import CommandItemData from './CommandItemData'
+import { CommandCategoryMap, CommandItemData } from './CommandItemData'
 import TreeWareBasicPopup from './TreeWareBasicPopup.vue'
 
 const ELEMENT_INPUT = 'INPUT'
@@ -29,7 +33,9 @@ const KEY_ESCAPE = 'Escape'
   }
 })
 export default class TreeWareCommandPalette extends Vue {
-  @Prop() commandItemDataList!: CommandItemData[]
+  @Prop() readonly commandItemDataList!: CommandItemData[]
+  @Prop() readonly commandCategoryMap!: CommandCategoryMap
+
   @Emit() apply(command: CommandItemData) {
     this.show = false
   }
