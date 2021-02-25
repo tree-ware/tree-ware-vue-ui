@@ -9,7 +9,7 @@ import 'reflect-metadata'
 import { Component, Vue, Ref } from 'vue-property-decorator'
 
 @Component
-export default class PaletteHeader extends Vue {}
+export default class PaletteHeaderContent extends Vue {}
 </script>
 <style lang="scss" scoped>
 .guide {

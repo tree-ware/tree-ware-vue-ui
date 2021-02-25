@@ -4,9 +4,11 @@
       class="command-list"
       v-if="commandItemDataList && commandItemDataList.length"
     >
-      <command-item
+      <component
+        :is="commandItem"
         v-for="(command, index) in commandItemDataList"
         :selectedItem="selectedItem"
+        :commandItemContent="commandItemContent"
         :commandItemData="command"
         :commandCategoryMap="commandCategoryMap"
         @item-select="itemSelectFromClick($event, index)"
@@ -20,24 +22,20 @@
 </template>
 
 <script lang="ts">
-import { keys } from 'd3'
 import 'reflect-metadata'
 import { Component, Vue, Prop, Watch, Emit } from 'vue-property-decorator'
-import CommandItem from './CommandItem.vue'
 import { CommandItemData, CommandCategoryMap } from './CommandItemData'
 
 const KEY_ARROW_UP = 'ArrowUp'
 const KEY_ARROW_DOWN = 'ArrowDown'
 const KEY_ENTER = 'Enter'
 
-@Component({
-  components: {
-    CommandItem
-  }
-})
+@Component
 export default class CommandList extends Vue {
   @Prop() readonly commandItemDataList!: CommandItemData[]
   @Prop() readonly commandCategoryMap!: CommandCategoryMap
+  @Prop({ type: Function }) readonly commandItemContent!: typeof Vue
+  @Prop({ type: Function }) readonly commandItem!: typeof Vue
 
   @Emit() apply(command: CommandItemData) {}
 
