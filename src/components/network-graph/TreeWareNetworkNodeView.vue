@@ -1,5 +1,5 @@
 <template>
-  <div :class="nodeClasses">
+  <div :id="node.id" :class="nodeClasses">
     <component :is="node.expandedContent" :node="node" />
     <template v-if="node.group && node.group.children.length">
       <div class="group-title">

@@ -1,5 +1,13 @@
 <template>
   <div class="tree-ware-network-graph-view">
+    <div class="nodes">
+      <tree-ware-network-node-view
+        v-for="column in graph.columns"
+        :key="column.id"
+        :node="column"
+      />
+    </div>
+
     <svg class="links">
       <defs>
         <marker
@@ -18,43 +26,51 @@
         </marker>
       </defs>
 
-      <!--
       <tree-ware-network-link-view
         v-for="link in graph.links"
+        ref="linksVue"
         :key="link.id"
         :link="link"
         :is-selectable="link.isSelectable"
         :column-gap="columnGap"
       />
-      -->
     </svg>
-
-    <div class="nodes">
-      <tree-ware-network-node-view
-        v-for="column in graph.columns"
-        :key="column.id"
-        :node="column"
-      />
-    </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, toRefs } from '@vue/composition-api'
+import {
+  defineComponent,
+  onUpdated,
+  PropType,
+  toRefs
+} from '@vue/composition-api'
 import { TreeWareNetworkGraph } from './TreeWareNetworkGraph'
+import TreeWareNetworkLinkView from './TreeWareNetworkLinkView.vue'
 import TreeWareNetworkNodeView from './TreeWareNetworkNodeView.vue'
 import { useTreeWareNetworkGraph } from './useTreeWareNetworkGraph'
+import Vue from 'vue'
 
 export default defineComponent({
   props: {
     graph: { type: Object as PropType<TreeWareNetworkGraph>, required: true }
   },
   components: {
+    TreeWareNetworkLinkView,
     TreeWareNetworkNodeView
   },
-  setup(props) {
+  setup(props, { refs }) {
     const { graph } = toRefs(props)
-    return useTreeWareNetworkGraph(graph)
+    const { columnGap, linkTypes, updateLinkPaths } = useTreeWareNetworkGraph(
+      refs,
+      graph
+    )
+
+    onUpdated(() => {
+      updateLinkPaths()
+    })
+
+    return { columnGap, linkTypes }
   }
 })
 </script>
@@ -67,6 +83,7 @@ export default defineComponent({
 
   .links {
     position: absolute;
+    pointer-events: none; // link component re-enables pointer-events
     height: 100%;
     width: 100%;
   }
@@ -78,6 +95,13 @@ export default defineComponent({
     justify-content: space-between;
     width: 100%;
     height: auto;
+  }
+
+  marker#test {
+    fill: gray;
+  }
+  .test {
+    stroke: gray;
   }
 }
 </style>

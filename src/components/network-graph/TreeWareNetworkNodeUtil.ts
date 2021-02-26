@@ -1,5 +1,6 @@
 import {
   TreeWareNetworkNode,
+  TreeWareNetworkNodeUserControl,
   TreeWareNetworkNodeUserState
 } from './TreeWareNetworkNode'
 
@@ -7,6 +8,18 @@ export const defaultTreeWareNetworkNodeUserState: TreeWareNetworkNodeUserState =
   isPinned: false,
   isHidden: false,
   isExpanded: false
+}
+
+export const treeWareNetworkNodeUserControlNone: TreeWareNetworkNodeUserControl = {
+  canPin: false,
+  canHide: false,
+  canExpand: false
+}
+
+export const treeWareNetworkNodeUserControlAll: TreeWareNetworkNodeUserControl = {
+  canPin: true,
+  canHide: true,
+  canExpand: true
 }
 
 export function addChildToParent(
