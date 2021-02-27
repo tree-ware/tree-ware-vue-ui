@@ -7,14 +7,14 @@ import { VueConstructor } from 'vue'
 
 export interface TreeWareNetworkNodeUserState {
   isPinned: boolean
-  isHidden: boolean
   isExpanded: boolean
+  isHidden: boolean
 }
 
 export interface TreeWareNetworkNodeUserControl {
   canPin: boolean
-  canHide: boolean
   canExpand: boolean
+  canHide: boolean
 }
 
 export interface TreeWareNetworkNodeRenderState {}
