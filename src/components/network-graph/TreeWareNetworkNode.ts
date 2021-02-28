@@ -36,3 +36,7 @@ export interface TreeWareNetworkNodeGroup {
   name: string
   children: TreeWareNetworkNode[]
 }
+
+export type TreeWareNetworkNodeUserStateMap = {
+  [nodeId: string]: TreeWareNetworkNodeUserState
+}

@@ -2,35 +2,35 @@
   <div class="tree-ware-network-node-toolbar">
     <div class="toolbar flex flex-row mb-2">
       <vx-tooltip
-        v-if="userControl.canPin"
+        v-if="node.canPin"
         :text="userControlTooltip.canPin"
-        :class="['pin', { 'is-pinned': userState.isPinned }, 'mr-2']"
+        :class="['pin', { 'is-pinned': node.isPinned }, 'mr-2']"
       >
-        <a @click="pinClick">
+        <a @click="pinClick(node.id, !node.isPinned)">
           <vs-icon
             icon="fa-thumbtack"
             icon-pack="fas"
-            :color="userState.isPinned ? pinnedPinColor : 'primary'"
+            :color="node.isPinned ? pinnedPinColor : 'primary'"
           ></vs-icon>
         </a>
       </vx-tooltip>
 
       <vx-tooltip
-        v-if="userControl.canExpand"
+        v-if="node.canExpand"
         :text="userControlTooltip.canExpand"
         class="inline mr-2"
       >
-        <a @click="expandClick">
+        <a @click="expandClick(node.id, !node.isExpanded)">
           <vs-icon :icon="expandIcon" icon-pack="fas" color="primary"></vs-icon>
         </a>
       </vx-tooltip>
 
       <vx-tooltip
-        v-if="userControl.canHide"
+        v-if="node.canHide"
         :text="userControlTooltip.canHide"
         class="inline mr-2"
       >
-        <a @click="hideClick">
+        <a @click="hideClick(node.id, !node.isHidden)">
           <vs-icon
             icon="fa-eye-slash"
             icon-pack="far"
@@ -45,7 +45,7 @@
       :text="alertTooltip"
       class="alert-count inline"
     >
-      <vs-chip @click="alertClick" color="danger">
+      <vs-chip @click="alertClick(node.id)" color="danger">
         {{ alertCount }}
       </vs-chip>
     </vx-tooltip>
@@ -53,13 +53,10 @@
 </template>
 
 <script lang="ts">
-import 'reflect-metadata'
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator'
-import {
-  TreeWareNetworkNodeUserControl,
-  TreeWareNetworkNodeUserState
-} from './TreeWareNetworkNode'
+import { computed, defineComponent, PropType } from '@vue/composition-api'
+import { TreeWareNetworkNode } from './TreeWareNetworkNode'
 import { TreeWareNetworkNodeToolbarTooltip } from './TreeWareNetworkNodeToolbarTypes'
+import { useTreeWareNetworkToolbarEmits } from './useTreeWareNetworkToolbarEmits'
 
 const defaultTreeWareNetworkNodeToolbarTooltip: TreeWareNetworkNodeToolbarTooltip = {
   canPin: 'Pin this node',
@@ -67,28 +64,30 @@ const defaultTreeWareNetworkNodeToolbarTooltip: TreeWareNetworkNodeToolbarToolti
   canHide: 'Hide this node'
 }
 
-@Component
-export default class TreeWareNetworkNodeToolbar extends Vue {
-  @Prop() readonly userControl!: TreeWareNetworkNodeUserControl
-  @Prop({ default: () => defaultTreeWareNetworkNodeToolbarTooltip })
-  readonly userControlTooltip!: TreeWareNetworkNodeToolbarTooltip
-
-  @Prop() readonly userState!: TreeWareNetworkNodeUserState
-
-  @Prop({ default: 'dark' }) readonly pinnedPinColor!: string
-
-  @Prop({ default: 0 }) readonly alertCount!: number
-  @Prop({ default: '' }) readonly alertTooltip!: string
-
-  @Emit() private pinClick() {}
-  @Emit() private expandClick() {}
-  @Emit() private hideClick() {}
-  @Emit() private alertClick() {}
-
-  private get expandIcon(): string {
-    return this.userState.isExpanded ? 'fa-chevron-up' : 'fa-chevron-down'
+export default defineComponent({
+  props: {
+    node: {
+      type: Object as PropType<TreeWareNetworkNode>,
+      required: true
+    },
+    userControlTooltip: {
+      type: Object as PropType<TreeWareNetworkNodeToolbarTooltip>,
+      default: () => defaultTreeWareNetworkNodeToolbarTooltip
+    },
+    pinnedPinColor: { type: String, default: 'dark' },
+    alertCount: { type: Number, default: 0 },
+    alertTooltip: { type: String, default: '' }
+  },
+  setup(props, { emit }) {
+    const expandIcon = computed(() =>
+      props.node.isExpanded ? 'fa-chevron-up' : 'fa-chevron-down'
+    )
+    return {
+      expandIcon,
+      ...useTreeWareNetworkToolbarEmits(emit, 'TreeWareNetworkNodeToolbar')
+    }
   }
-}
+})
 </script>
 
 <style lang="scss" scoped>

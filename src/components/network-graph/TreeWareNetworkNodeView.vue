@@ -1,6 +1,13 @@
 <template>
   <div :id="node.id" :class="nodeClasses">
-    <component :is="node.expandedContent" :node="node" />
+    <component
+      :is="node.expandedContent"
+      :node="node"
+      @pin-click="pinClick"
+      @expand-click="expandClick"
+      @hide-click="hideClick"
+      @alert-click="alertClick"
+    />
     <template v-if="node.group && node.group.children.length">
       <div class="group-title">
         {{ node.group.children.length }}
@@ -13,6 +20,10 @@
           v-for="child in node.group.children"
           :key="child.id"
           :node="child"
+          @pin-click="pinClick"
+          @expand-click="expandClick"
+          @hide-click="hideClick"
+          @alert-click="alertClick"
           :class="child.classes"
         />
       </div>
@@ -36,6 +47,7 @@ import { defineComponent, PropType, toRefs } from '@vue/composition-api'
 import { TreeWareNetworkNode } from './TreeWareNetworkNode'
 import { useTreeWareNetworkNode } from './useTreeWareNetworkNode'
 import VuePerfectScrollbar from 'vue-perfect-scrollbar'
+import { useTreeWareNetworkToolbarEmits } from '@/tree-ware-vue-ui/src/components/network-graph/useTreeWareNetworkToolbarEmits'
 
 export default defineComponent({
   name: 'tree-ware-network-node-view',
@@ -43,9 +55,12 @@ export default defineComponent({
     node: { type: Object as PropType<TreeWareNetworkNode>, required: true }
   },
   components: { VuePerfectScrollbar },
-  setup(props) {
+  setup(props, { emit }) {
     const { node } = toRefs(props)
-    return useTreeWareNetworkNode(node)
+    return {
+      ...useTreeWareNetworkNode(node),
+      ...useTreeWareNetworkToolbarEmits(emit, 'TreeWareNetworkNodeView')
+    }
   }
 })
 </script>

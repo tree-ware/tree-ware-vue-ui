@@ -23,6 +23,6 @@ export interface TreeWareNetworkLink
   data: any // different links in the same graph can have different data types
 }
 
-export const defaultTreeWareNetworkLinkUserState: TreeWareNetworkLinkUserState = {
-  isSelected: false
+export type TreeWareNetworkLinkUserStateMap = {
+  [linkId: string]: TreeWareNetworkLinkUserState
 }

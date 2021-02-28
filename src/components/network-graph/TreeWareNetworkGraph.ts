@@ -25,4 +25,8 @@ export class TreeWareNetworkGraph {
     this.links.push(link)
     return true
   }
+
+  containsNode(nodeId: string): boolean {
+    return Boolean(this.nodeMap[nodeId])
+  }
 }

@@ -9,9 +9,9 @@
 </template>
 
 <script lang="ts">
-import { TreeWareNetworkNode } from '@/tree-ware-vue-ui/src/components/network-graph/TreeWareNetworkNode'
 import 'reflect-metadata'
 import { Component, Prop, Vue } from 'vue-property-decorator'
+import { TreeWareNetworkNode } from './TreeWareNetworkNode'
 
 @Component
 export default class TreeWareNetworkTestNode extends Vue {

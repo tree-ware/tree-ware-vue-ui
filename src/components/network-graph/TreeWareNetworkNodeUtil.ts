@@ -1,3 +1,4 @@
+import { TreeWareNetworkLinkUserState } from './TreeWareNetworkLink'
 import {
   TreeWareNetworkNode,
   TreeWareNetworkNodeUserControl,
@@ -8,6 +9,10 @@ export const defaultTreeWareNetworkNodeUserState: TreeWareNetworkNodeUserState =
   isPinned: false,
   isExpanded: false,
   isHidden: false
+}
+
+export const defaultTreeWareNetworkLinkUserState: TreeWareNetworkLinkUserState = {
+  isSelected: false
 }
 
 export const treeWareNetworkNodeUserControlNone: TreeWareNetworkNodeUserControl = {
@@ -32,4 +37,14 @@ export function addChildToParent(
 
 export function sortChildrenById(parent: TreeWareNetworkNode) {
   parent.group?.children.sort((a, b) => a.id.localeCompare(b.id))
+}
+
+export function cloneWithoutHierarchy(
+  node: TreeWareNetworkNode
+): TreeWareNetworkNode {
+  return {
+    ...node,
+    parent: null,
+    group: node.group ? { ...node.group, children: [] } : null
+  }
 }

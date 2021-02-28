@@ -5,6 +5,10 @@
         v-for="column in graph.columns"
         :key="column.id"
         :node="column"
+        @pin-click="pinClick"
+        @expand-click="expandClick"
+        @hide-click="hideClick"
+        @alert-click="alertClick"
       />
     </div>
 
@@ -39,6 +43,7 @@
 </template>
 
 <script lang="ts">
+import { useTreeWareNetworkToolbarEmits } from '@/tree-ware-vue-ui/src/components/network-graph/useTreeWareNetworkToolbarEmits'
 import {
   defineComponent,
   onUpdated,
@@ -49,7 +54,6 @@ import { TreeWareNetworkGraph } from './TreeWareNetworkGraph'
 import TreeWareNetworkLinkView from './TreeWareNetworkLinkView.vue'
 import TreeWareNetworkNodeView from './TreeWareNetworkNodeView.vue'
 import { useTreeWareNetworkGraph } from './useTreeWareNetworkGraph'
-import Vue from 'vue'
 
 export default defineComponent({
   props: {
@@ -59,7 +63,7 @@ export default defineComponent({
     TreeWareNetworkLinkView,
     TreeWareNetworkNodeView
   },
-  setup(props, { refs }) {
+  setup(props, { emit, refs }) {
     const { graph } = toRefs(props)
     const { columnGap, linkTypes, updateLinkPaths } = useTreeWareNetworkGraph(
       refs,
@@ -70,7 +74,11 @@ export default defineComponent({
       updateLinkPaths()
     })
 
-    return { columnGap, linkTypes }
+    return {
+      columnGap,
+      linkTypes,
+      ...useTreeWareNetworkToolbarEmits(emit, 'TreeWareNetworkGraphView')
+    }
   }
 })
 </script>
