@@ -1,10 +1,7 @@
 <template>
   <div class="palette-popup" v-if="show" @click="clickOuterContent">
-    <div
-      class="bg-dark content"
-      :style="style"
-      :class="{ fullscreen: fullScreen }"
-    >
+    <div class="palette-bg-fill" />
+    <div class="content" :style="style" :class="{ fullscreen: fullScreen }">
       <slot></slot>
     </div>
   </div>
@@ -33,13 +30,17 @@ export default class TreeWareBasicPopup extends Vue {
   }
 
   private clickOuterContent(e: MouseEvent) {
-    if ((e.target as HTMLElement).className === 'palette-popup') {
+    const targetClass = (e.target as HTMLElement).className
+    if (targetClass === 'palette-popup' || targetClass === 'palette-bg-fill') {
       this.$emit('click-outer-content')
     }
   }
 }
 </script>
 <style lang="scss" scoped>
+$background-color: rgba(var(--vs-dark), 1);
+$border-color: grey;
+
 .palette-popup {
   width: 100%;
   height: 100%;
@@ -47,12 +48,20 @@ export default class TreeWareBasicPopup extends Vue {
   top: 0;
   left: 0;
   z-index: 100000;
+  .palette-bg-fill {
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+  }
   .content {
     position: relative;
     padding-left: 10px;
     padding-right: 10px;
     padding-bottom: 10px;
-    border: 1px solid grey;
+    border: 1px solid $border-color;
+    background-color: $background-color;
     border-radius: 5px;
   }
   .fullscreen {

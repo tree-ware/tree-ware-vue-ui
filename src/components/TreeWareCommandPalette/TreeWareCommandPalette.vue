@@ -1,26 +1,40 @@
 <template>
-  <component
-    :is="popup"
-    :popupWidth="popupWidth"
-    :topOffSetInPercentage="topOffSetInPercentage"
-    :lengthUnit="lengthUnit"
-    :show="show"
-    :fullScreen="fullScreen"
-    @click-outer-content="clickOuterContent"
-  >
-    <div class="content-container">
-      <component :is="paletteHeaderContent" />
-      <component :is="paletteInput" @change="searchStringChange" />
-      <component
-        :is="commandList"
-        :commandItem="commandItem"
-        :commandItemContent="commandItemContent"
-        :commandItemDataList="commandFilteredList"
-        :commandCategoryMap="commandCategoryMap"
-        @apply="apply"
-      />
-    </div>
-  </component>
+  <div>
+    <component
+      :is="keyManager"
+      :triggerShortKey="paletteTriggerShortKey"
+      @key-trigger="paletteTrigger"
+    />
+    <component
+      :is="keyManager"
+      :triggerShortKey="escKeyShortcut"
+      :ignoreInputElement="false"
+      @key-trigger="escTrigger"
+    />
+    <component
+      :is="popup"
+      :popupWidth="popupWidth"
+      :topOffSetInPercentage="topOffSetInPercentage"
+      :lengthUnit="lengthUnit"
+      :show="show"
+      :fullScreen="fullScreen"
+      @click-outer-content="clickOuterContent"
+    >
+      <div class="content-container">
+        <component :is="paletteHeaderContent" />
+        <component :is="paletteInput" @change="searchStringChange" />
+        <component
+          :is="commandList"
+          :commandItem="commandItem"
+          :commandItemContent="commandItemContent"
+          :commandItemDataList="commandFilteredList"
+          :commandCategoryMap="commandCategoryMap"
+          :keyManager="keyManager"
+          @apply="apply"
+        />
+      </div>
+    </component>
+  </div>
 </template>
 
 <script lang="ts">
@@ -33,12 +47,12 @@ import {
   CommandCategoryMap,
   CommandItemData,
   KeyShortCut
-} from './CommandItemData'
+} from './CommandInterfaces'
 import TreeWareBasicPopup from './TreeWareBasicPopup.vue'
 import CommandItemContent from './CommandItemContent.vue'
 import CommandItem from './CommandItem.vue'
+import PaletteKeyManager from './PaletteKeyManager'
 
-const ELEMENT_INPUT = 'INPUT'
 const KEY_ESCAPE = 'Escape'
 
 @Component({
@@ -46,7 +60,8 @@ const KEY_ESCAPE = 'Escape'
     PaletteInput,
     PaletteHeaderContent,
     CommandList,
-    TreeWareBasicPopup
+    TreeWareBasicPopup,
+    PaletteKeyManager
   }
 })
 export default class TreeWareCommandPalette extends Vue {
@@ -82,6 +97,10 @@ export default class TreeWareCommandPalette extends Vue {
   @Prop({ default: TreeWareBasicPopup, type: Function })
   readonly popup!: typeof Vue
 
+  //Template for key manager
+  @Prop({ default: PaletteKeyManager, type: Function })
+  readonly keyManager!: typeof Vue
+
   @Emit() apply(command: CommandItemData) {
     this.show = false
   }
@@ -90,56 +109,30 @@ export default class TreeWareCommandPalette extends Vue {
     return configKey ? eventKey : !eventKey
   }
 
-  mounted() {
-    this.handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === KEY_ESCAPE) {
-        this.show = false
-      } else if ((e.target as HTMLElement).tagName !== ELEMENT_INPUT) {
-        if (this.paletteTriggerShortKey) {
-          e.preventDefault()
-          if (
-            e.key.toLowerCase() ===
-              this.paletteTriggerShortKey.key.toLowerCase() &&
-            !this.show
-          ) {
-            const shiftKey = this.getKeyStateIfOn(
-              this.paletteTriggerShortKey.shiftKey,
-              e.shiftKey
-            )
-            const altKey = this.getKeyStateIfOn(
-              this.paletteTriggerShortKey.altKey,
-              e.altKey
-            )
-            const ctrlKey = this.getKeyStateIfOn(
-              this.paletteTriggerShortKey.ctrlKey,
-              e.ctrlKey
-            )
-            const metaKey = this.getKeyStateIfOn(
-              this.paletteTriggerShortKey.metaKey,
-              e.metaKey
-            )
-            this.show = shiftKey && altKey && ctrlKey && metaKey
-          }
-        } else {
-          this.show = true
-        }
-      }
-    }
-    window.addEventListener('keydown', this.handleKeyDown)
+  private showChange(show: boolean) {
+    this.searchString = ''
+    this.show = show
   }
 
-  beforeUnmount() {
-    this.show = false
-    window.removeEventListener('keydown', this.handleKeyDown)
+  private paletteTrigger(e: KeyboardEvent) {
+    e.preventDefault()
+    this.showChange(true)
+  }
+
+  private escTrigger(e: KeyboardEvent) {
+    e.preventDefault()
+    this.showChange(false)
   }
 
   private clickOuterContent() {
-    this.show = false
+    this.showChange(false)
   }
 
   private get commandFilteredList(): CommandItemData[] {
     return this.commandItemDataList.filter(command =>
-      command.description.startsWith(this.searchString)
+      command.description
+        .toLowerCase()
+        .startsWith(this.searchString.toLowerCase())
     )
   }
 
@@ -147,9 +140,10 @@ export default class TreeWareCommandPalette extends Vue {
     this.searchString = value
   }
 
-  private searchString = ''
-
+  private escKeyShortcut: KeyShortCut = {
+    key: KEY_ESCAPE
+  }
   private show = false
-  private handleKeyDown = (e: KeyboardEvent) => {}
+  private searchString = ''
 }
 </script>

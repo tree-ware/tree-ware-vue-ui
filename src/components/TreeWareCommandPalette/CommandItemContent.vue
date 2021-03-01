@@ -1,5 +1,5 @@
 <template>
-  <div class="item" :class="{ 'bg-primary': isSelected }">
+  <div class="item-content" :class="{ selected: isSelected }">
     <div class="category" v-if="commandItemData.category !== undefined">
       <vs-chip :color="commandCategoryMap[commandItemData.category].color">
         {{ commandCategoryMap[commandItemData.category].name }}
@@ -14,7 +14,7 @@
 <script lang="ts">
 import 'reflect-metadata'
 import { Component, Vue, Ref, Prop, Emit, Watch } from 'vue-property-decorator'
-import { CommandCategoryMap, CommandItemData } from './CommandItemData'
+import { CommandCategoryMap, CommandItemData } from './CommandInterfaces'
 
 @Component
 export default class CommandItemContent extends Vue {
@@ -24,12 +24,15 @@ export default class CommandItemContent extends Vue {
 }
 </script>
 <style lang="scss" scoped>
-.item {
+$border-color: black;
+$background-color: rgba(var(--vs-primary), 1);
+
+.item-content {
   display: flex;
   padding-top: 10px;
   padding-bottom: 10px;
   padding-left: 5px;
-  border-bottom: 2px solid black;
+  border-bottom: 2px solid $border-color;
   cursor: pointer;
 
   .category {
@@ -38,6 +41,10 @@ export default class CommandItemContent extends Vue {
   .label {
     padding-top: 2px;
     padding-left: 8px;
+  }
+
+  &.selected {
+    background-color: $background-color;
   }
 }
 </style>
