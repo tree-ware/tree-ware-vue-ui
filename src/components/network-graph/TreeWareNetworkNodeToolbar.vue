@@ -6,7 +6,7 @@
         :text="userControlTooltip.canPin"
         :class="['pin', { 'is-pinned': node.isPinned }, 'mr-2']"
       >
-        <a @click="pinClick(node.id, !node.isPinned)">
+        <a @click="pinClick(node, !node.isPinned)">
           <vs-icon
             icon="fa-thumbtack"
             icon-pack="fas"
@@ -20,7 +20,7 @@
         :text="userControlTooltip.canExpand"
         class="inline mr-2"
       >
-        <a @click="expandClick(node.id, !node.isExpanded)">
+        <a @click="expandClick(node, !node.isExpanded)">
           <vs-icon :icon="expandIcon" icon-pack="fas" color="primary"></vs-icon>
         </a>
       </vx-tooltip>
@@ -30,7 +30,7 @@
         :text="userControlTooltip.canHide"
         class="inline mr-2"
       >
-        <a @click="hideClick(node.id, !node.isHidden)">
+        <a @click="hideClick(node, !node.isHidden)">
           <vs-icon
             icon="fa-eye-slash"
             icon-pack="far"
@@ -45,7 +45,7 @@
       :text="alertTooltip"
       class="alert-count inline"
     >
-      <vs-chip @click="alertClick(node.id)" color="danger">
+      <vs-chip @click="alertClick(node)" color="danger">
         {{ alertCount }}
       </vs-chip>
     </vx-tooltip>

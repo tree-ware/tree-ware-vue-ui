@@ -1,23 +1,24 @@
 import { SetupContext } from '@vue/composition-api'
+import { TreeWareNetworkNode } from './TreeWareNetworkNode'
 
 export function useTreeWareNetworkToolbarEmits(
   emit: SetupContext['emit'],
   usedBy: string = ''
 ) {
-  function pinClick(nodeId: string, isPinned: boolean) {
-    emit('pin-click', nodeId, isPinned)
+  function pinClick(node: TreeWareNetworkNode, newIsPinned: boolean) {
+    emit('pin-click', node, newIsPinned)
   }
 
-  function expandClick(nodeId: string, isExpanded: boolean) {
-    emit('expand-click', nodeId, isExpanded)
+  function expandClick(node: TreeWareNetworkNode, newIsExpanded: boolean) {
+    emit('expand-click', node, newIsExpanded)
   }
 
-  function hideClick(nodeId: string, isHidden: boolean) {
-    emit('hide-click', nodeId, isHidden)
+  function hideClick(node: TreeWareNetworkNode, newIsHidden: boolean) {
+    emit('hide-click', node, newIsHidden)
   }
 
-  function alertClick(nodeId: string) {
-    emit('alert-click', nodeId)
+  function alertClick(node: TreeWareNetworkNode) {
+    emit('alert-click', node)
   }
 
   return {
