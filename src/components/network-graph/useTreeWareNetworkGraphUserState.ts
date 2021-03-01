@@ -13,8 +13,8 @@ import {
 } from './TreeWareNetworkNodeUtil'
 
 export function useTreeWareNetworkGraphUserState() {
-  const nodeUserState = ref<TreeWareNetworkNodeUserStateMap>({})
-  const linkUserState = ref<TreeWareNetworkLinkUserStateMap>({})
+  const nodeUserStateMap = ref<TreeWareNetworkNodeUserStateMap>({})
+  const linkUserStateMap = ref<TreeWareNetworkLinkUserStateMap>({})
 
   function setNodeIsPinned(nodeId: string, isPinned: boolean) {
     setNodeState(nodeId, 'isPinned', isPinned)
@@ -33,7 +33,7 @@ export function useTreeWareNetworkGraphUserState() {
     key: K,
     value: TreeWareNetworkNodeUserState[K]
   ) {
-    const oldState = nodeUserState.value[nodeId]
+    const oldState = nodeUserStateMap.value[nodeId]
     if (oldState) oldState[key] = value
     else {
       const newState: TreeWareNetworkNodeUserState = {
@@ -41,8 +41,8 @@ export function useTreeWareNetworkGraphUserState() {
       }
       newState[key] = value
       // TODO(performance): make `set()` Vue 2 composition API work below.
-      nodeUserState.value = {
-        ...nodeUserState.value,
+      nodeUserStateMap.value = {
+        ...nodeUserStateMap.value,
         [nodeId]: newState
       }
     }
@@ -57,7 +57,7 @@ export function useTreeWareNetworkGraphUserState() {
     key: K,
     value: TreeWareNetworkLinkUserState[K]
   ) {
-    const oldState = linkUserState.value[linkId]
+    const oldState = linkUserStateMap.value[linkId]
     if (oldState) oldState[key] = value
     else {
       const newState: TreeWareNetworkLinkUserState = {
@@ -65,16 +65,16 @@ export function useTreeWareNetworkGraphUserState() {
       }
       newState[key] = value
       // TODO(performance): make `set()` Vue 2 composition API work below.
-      linkUserState.value = {
-        ...linkUserState.value,
+      linkUserStateMap.value = {
+        ...linkUserStateMap.value,
         [linkId]: newState
       }
     }
   }
 
   return {
-    nodeUserState,
-    linkUserState,
+    nodeUserStateMap,
+    linkUserStateMap,
     setNodeIsPinned,
     setNodeIsExpanded,
     setNodeIsHidden,

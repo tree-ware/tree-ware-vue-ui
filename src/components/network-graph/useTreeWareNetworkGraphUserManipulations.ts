@@ -3,6 +3,7 @@ import { TreeWareNetworkGraph } from './TreeWareNetworkGraph'
 import { TreeWareNetworkLinkUserStateMap } from './TreeWareNetworkLink'
 import {
   TreeWareNetworkNode,
+  TreeWareNetworkNodeUserState,
   TreeWareNetworkNodeUserStateMap
 } from './TreeWareNetworkNode'
 import {
@@ -12,14 +13,14 @@ import {
 
 export function useTreeWareNetworkGraphUserManipulations(
   inputGraph: Ref<TreeWareNetworkGraph>,
-  nodeUserState: Ref<TreeWareNetworkNodeUserStateMap>,
-  linkUserState: Ref<TreeWareNetworkLinkUserStateMap>
+  nodeUserStateMap: Ref<TreeWareNetworkNodeUserStateMap>,
+  linkUserStateMap: Ref<TreeWareNetworkLinkUserStateMap>
 ) {
   const userGraph = computed(() =>
     computeUserManipulatedGraph(
       inputGraph.value,
-      nodeUserState.value,
-      linkUserState.value
+      nodeUserStateMap.value,
+      linkUserStateMap.value
     )
   )
 
@@ -28,14 +29,14 @@ export function useTreeWareNetworkGraphUserManipulations(
 
 function computeUserManipulatedGraph(
   inputGraph: TreeWareNetworkGraph,
-  nodeUserState: TreeWareNetworkNodeUserStateMap,
-  linkUserState: TreeWareNetworkLinkUserStateMap
+  nodeUserStateMap: TreeWareNetworkNodeUserStateMap,
+  linkUserStateMap: TreeWareNetworkLinkUserStateMap
 ): TreeWareNetworkGraph {
   const userGraph = new TreeWareNetworkGraph()
 
   // Process the nodes first.
   inputGraph.columns.forEach(column => {
-    computeUserManipulatedColumn(column, nodeUserState, userGraph)
+    computeUserManipulatedColumn(column, nodeUserStateMap, userGraph)
   })
   // Add links connected to remaining nodes.
   inputGraph.links.forEach(link => {
@@ -52,18 +53,19 @@ function computeUserManipulatedGraph(
 
 function computeUserManipulatedColumn(
   inputColumn: TreeWareNetworkNode,
-  nodeUserState: TreeWareNetworkNodeUserStateMap,
+  nodeUserStateMap: TreeWareNetworkNodeUserStateMap,
   userGraph: TreeWareNetworkGraph
 ) {
-  const isHidden =
-    nodeUserState[inputColumn.id]?.isHidden ?? inputColumn.isHidden
+  const nodeUserState = nodeUserStateMap[inputColumn.id]
+  const isHidden = getNodeState('isHidden', nodeUserState, inputColumn)
   if (isHidden) return
   const userColumn = cloneWithoutHierarchy(inputColumn)
+  userColumn.isExpanded = getNodeState('isExpanded', nodeUserState, inputColumn)
   userGraph.addColumn(userColumn)
   inputColumn.group?.children.forEach(inputChild => {
     computeUserManipulatedChildNode(
       inputChild,
-      nodeUserState,
+      nodeUserStateMap,
       userColumn,
       userGraph
     )
@@ -72,21 +74,31 @@ function computeUserManipulatedColumn(
 
 function computeUserManipulatedChildNode(
   inputChild: TreeWareNetworkNode,
-  nodeUserState: TreeWareNetworkNodeUserStateMap,
+  nodeUserStateMap: TreeWareNetworkNodeUserStateMap,
   userParent: TreeWareNetworkNode,
   userGraph: TreeWareNetworkGraph
 ) {
-  const isHidden = nodeUserState[inputChild.id]?.isHidden ?? inputChild.isHidden
+  const nodeUserState = nodeUserStateMap[inputChild.id]
+  const isHidden = getNodeState('isHidden', nodeUserState, inputChild)
   if (isHidden) return
   const userChild = cloneWithoutHierarchy(inputChild)
+  userChild.isExpanded = getNodeState('isExpanded', nodeUserState, inputChild)
   addChildToParent(userChild, userParent)
   userGraph.addNode(userChild)
   inputChild.group?.children.forEach(inputChild => {
     computeUserManipulatedChildNode(
       inputChild,
-      nodeUserState,
+      nodeUserStateMap,
       userChild,
       userGraph
     )
   })
+}
+
+function getNodeState<K extends keyof TreeWareNetworkNodeUserState>(
+  key: K,
+  nodeUserState: TreeWareNetworkNodeUserState,
+  node: TreeWareNetworkNode
+): TreeWareNetworkNodeUserState[K] {
+  return nodeUserState ? nodeUserState[key] : node[key]
 }
