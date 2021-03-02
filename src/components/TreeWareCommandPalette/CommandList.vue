@@ -33,7 +33,7 @@
         :key="index"
       />
     </div>
-    <command-not-found v-else />
+    <component :is="commandNotFound" v-else />
   </div>
 </template>
 
@@ -46,7 +46,6 @@ import {
   KeyShortCut
 } from './CommandInterfaces'
 import PaletteKeyManager from './PaletteKeyManager'
-import CommandNotFound from './CommandNotFound.vue'
 
 const KEY_ARROW_UP = 'ArrowUp'
 const KEY_ARROW_DOWN = 'ArrowDown'
@@ -54,8 +53,7 @@ const KEY_ENTER = 'Enter'
 
 @Component({
   components: {
-    PaletteKeyManager,
-    CommandNotFound
+    PaletteKeyManager
   }
 })
 export default class CommandList extends Vue {
@@ -64,6 +62,7 @@ export default class CommandList extends Vue {
   @Prop({ type: Function }) readonly commandItemContent!: typeof Vue
   @Prop({ type: Function }) readonly commandItem!: typeof Vue
   @Prop({ type: Function }) readonly keyManager!: typeof Vue
+  @Prop({ type: Function }) readonly commandNotFound!: typeof Vue
 
   @Emit() apply(command: CommandItemData) {}
 

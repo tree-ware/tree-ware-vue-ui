@@ -30,6 +30,7 @@
           :commandItemDataList="commandFilteredList"
           :commandCategoryMap="commandCategoryMap"
           :keyManager="keyManager"
+          :commandNotFound="commandNotFound"
           @apply="apply"
         />
       </div>
@@ -52,6 +53,7 @@ import TreeWareBasicPopup from './TreeWareBasicPopup.vue'
 import CommandItemContent from './CommandItemContent.vue'
 import CommandItem from './CommandItem.vue'
 import PaletteKeyManager from './PaletteKeyManager'
+import CommandNotFound from './CommandNotFound.vue'
 
 const KEY_ESCAPE = 'Escape'
 
@@ -61,7 +63,8 @@ const KEY_ESCAPE = 'Escape'
     PaletteHeaderContent,
     CommandList,
     TreeWareBasicPopup,
-    PaletteKeyManager
+    PaletteKeyManager,
+    CommandNotFound
   }
 })
 export default class TreeWareCommandPalette extends Vue {
@@ -93,13 +96,17 @@ export default class TreeWareCommandPalette extends Vue {
   @Prop({ default: CommandItem, type: Function })
   readonly commandItem!: typeof Vue
 
-  //Template for popup component
+  // Template for popup component
   @Prop({ default: TreeWareBasicPopup, type: Function })
   readonly popup!: typeof Vue
 
-  //Template for key manager
+  // Template for key manager
   @Prop({ default: PaletteKeyManager, type: Function })
   readonly keyManager!: typeof Vue
+
+  // Template for command not found
+  @Prop({ default: CommandNotFound, type: Function })
+  readonly commandNotFound!: typeof Vue
 
   @Emit() apply(command: CommandItemData) {
     this.show = false

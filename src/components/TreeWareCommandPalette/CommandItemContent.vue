@@ -13,7 +13,7 @@
 
 <script lang="ts">
 import 'reflect-metadata'
-import { Component, Vue, Ref, Prop, Emit, Watch } from 'vue-property-decorator'
+import { Component, Vue, Prop } from 'vue-property-decorator'
 import { CommandCategoryMap, CommandItemData } from './CommandInterfaces'
 
 @Component

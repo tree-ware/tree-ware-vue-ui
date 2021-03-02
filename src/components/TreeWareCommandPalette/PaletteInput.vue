@@ -10,7 +10,6 @@
 </template>
 
 <script lang="ts">
-import 'reflect-metadata'
 import { Component, Vue, Ref, Emit } from 'vue-property-decorator'
 
 @Component
