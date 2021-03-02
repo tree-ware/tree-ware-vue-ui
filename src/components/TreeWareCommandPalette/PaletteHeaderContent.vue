@@ -4,7 +4,7 @@
     <div class="flex">
       <div class="mr-5">
         <div class="updown_guide">
-          <vs-icon icon="import_export"> </vs-icon>
+          <vs-icon icon="import_export" size="1rem"> </vs-icon>
         </div>
         <span class="updown_label">to navigate</span>
       </div>
@@ -46,7 +46,7 @@ $background-color: black;
     margin-right: 4px;
   }
   .updown_label {
-    bottom: 3px;
+    bottom: 2px;
     position: relative;
   }
   .key_guide {
