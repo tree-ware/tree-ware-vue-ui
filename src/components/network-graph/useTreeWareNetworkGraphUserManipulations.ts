@@ -2,10 +2,12 @@ import { computed, Ref } from '@vue/composition-api'
 import { TreeWareNetworkGraph } from './TreeWareNetworkGraph'
 import {
   TreeWareNetworkLink,
+  TreeWareNetworkLinkComparator,
   TreeWareNetworkLinkUserStateMap
 } from './TreeWareNetworkLink'
 import {
   TreeWareNetworkNode,
+  TreeWareNetworkNodeComparator,
   TreeWareNetworkNodeUserState,
   TreeWareNetworkNodeUserStateMap
 } from './TreeWareNetworkNode'
@@ -18,15 +20,20 @@ import {
 export function useTreeWareNetworkGraphUserManipulations(
   inputGraph: Ref<TreeWareNetworkGraph>,
   nodeUserStateMap: Ref<TreeWareNetworkNodeUserStateMap>,
-  linkUserStateMap: Ref<TreeWareNetworkLinkUserStateMap>
+  linkUserStateMap: Ref<TreeWareNetworkLinkUserStateMap>,
+  compareNodes?: TreeWareNetworkNodeComparator,
+  compareLinks?: TreeWareNetworkLinkComparator
 ) {
-  const userGraph = computed(() =>
-    computeUserManipulatedGraph(
+  const userGraph = computed(() => {
+    const graph = computeUserManipulatedGraph(
       inputGraph.value,
       nodeUserStateMap.value,
       linkUserStateMap.value
     )
-  )
+    if (compareNodes) graph.sortNodes(compareNodes)
+    if (compareLinks) graph.sortLinks(compareLinks)
+    return graph
+  })
   return { userGraph }
 }
 

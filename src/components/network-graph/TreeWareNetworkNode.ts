@@ -40,3 +40,8 @@ export interface TreeWareNetworkNodeGroup {
 export type TreeWareNetworkNodeUserStateMap = {
   [nodeId: string]: TreeWareNetworkNodeUserState
 }
+
+export type TreeWareNetworkNodeComparator = (
+  a: TreeWareNetworkNode,
+  b: TreeWareNetworkNode
+) => number

@@ -1,5 +1,12 @@
-import { TreeWareNetworkLink } from './TreeWareNetworkLink'
-import { TreeWareNetworkNode } from './TreeWareNetworkNode'
+import {
+  TreeWareNetworkLink,
+  TreeWareNetworkLinkComparator
+} from './TreeWareNetworkLink'
+import {
+  TreeWareNetworkNode,
+  TreeWareNetworkNodeComparator
+} from './TreeWareNetworkNode'
+import { sortNodeChildren } from './TreeWareNetworkNodeUtil'
 
 export class TreeWareNetworkGraph {
   readonly columns: TreeWareNetworkNode[] = []
@@ -28,5 +35,14 @@ export class TreeWareNetworkGraph {
 
   containsNode(nodeId: string): boolean {
     return Boolean(this.nodeMap[nodeId])
+  }
+
+  sortNodes(compareNodes: TreeWareNetworkNodeComparator) {
+    this.columns.sort(compareNodes)
+    this.columns.forEach(column => sortNodeChildren(column, compareNodes))
+  }
+
+  sortLinks(compareLinks: TreeWareNetworkLinkComparator) {
+    this.links.sort(compareLinks)
   }
 }

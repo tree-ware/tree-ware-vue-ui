@@ -1,6 +1,7 @@
 import { TreeWareNetworkLinkUserState } from './TreeWareNetworkLink'
 import {
   TreeWareNetworkNode,
+  TreeWareNetworkNodeComparator,
   TreeWareNetworkNodeUserControl,
   TreeWareNetworkNodeUserState
 } from './TreeWareNetworkNode'
@@ -35,8 +36,8 @@ export function addChildToParent(
   parent.group?.children.push(child)
 }
 
-export function sortChildrenById(parent: TreeWareNetworkNode) {
-  parent.group?.children.sort((a, b) => a.id.localeCompare(b.id))
+export function compareNodeIds(a: TreeWareNetworkNode, b: TreeWareNetworkNode) {
+  return a.id.localeCompare(b.id)
 }
 
 export function cloneWithoutHierarchy(
@@ -74,4 +75,12 @@ export function cloneSubHierarchy(
         }
       : null
   }
+}
+
+export function sortNodeChildren(
+  node: TreeWareNetworkNode,
+  compareNodes: TreeWareNetworkNodeComparator
+) {
+  node.group?.children.sort(compareNodes)
+  node.group?.children.forEach(child => sortNodeChildren(child, compareNodes))
 }

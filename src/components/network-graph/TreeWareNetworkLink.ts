@@ -26,3 +26,8 @@ export interface TreeWareNetworkLink
 export type TreeWareNetworkLinkUserStateMap = {
   [linkId: string]: TreeWareNetworkLinkUserState
 }
+
+export type TreeWareNetworkLinkComparator = (
+  a: TreeWareNetworkLink,
+  b: TreeWareNetworkLink
+) => number
