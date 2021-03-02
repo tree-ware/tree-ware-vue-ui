@@ -48,3 +48,21 @@ export function cloneWithoutHierarchy(
     group: node.group ? { ...node.group, children: [] } : null
   }
 }
+
+export function cloneSubHierarchy(
+  node: TreeWareNetworkNode,
+  parent: TreeWareNetworkNode | null = null
+): TreeWareNetworkNode {
+  return {
+    ...node,
+    parent,
+    group: node.group
+      ? {
+          ...node.group,
+          children: node.group.children.map(child =>
+            cloneSubHierarchy(child, node)
+          )
+        }
+      : null
+  }
+}

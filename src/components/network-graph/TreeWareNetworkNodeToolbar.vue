@@ -60,7 +60,7 @@ import { useTreeWareNetworkToolbarEmits } from './useTreeWareNetworkToolbarEmits
 
 const defaultTreeWareNetworkNodeToolbarTooltip: TreeWareNetworkNodeToolbarTooltip = {
   canPin: 'Pin this node',
-  canExpand: 'Expand this node',
+  canExpand: 'Expand/collapse this node',
   canHide: 'Hide this node'
 }
 
