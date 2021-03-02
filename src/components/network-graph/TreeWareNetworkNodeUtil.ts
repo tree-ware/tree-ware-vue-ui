@@ -49,13 +49,22 @@ export function cloneWithoutHierarchy(
   }
 }
 
+export function cloneSuperHierarchy(
+  node: TreeWareNetworkNode,
+  childClone: TreeWareNetworkNode | null = null
+): TreeWareNetworkNode {
+  const clone = cloneWithoutHierarchy(node)
+  if (childClone && clone.group) clone.group.children = [childClone]
+  return node.parent ? cloneSuperHierarchy(node.parent, clone) : clone
+}
+
 export function cloneSubHierarchy(
   node: TreeWareNetworkNode,
-  parent: TreeWareNetworkNode | null = null
+  parentClone: TreeWareNetworkNode | null = null
 ): TreeWareNetworkNode {
   return {
     ...node,
-    parent,
+    parent: parentClone,
     group: node.group
       ? {
           ...node.group,

@@ -1,6 +1,9 @@
 import { computed, Ref } from '@vue/composition-api'
 import { TreeWareNetworkGraph } from './TreeWareNetworkGraph'
-import { TreeWareNetworkLinkUserStateMap } from './TreeWareNetworkLink'
+import {
+  TreeWareNetworkLink,
+  TreeWareNetworkLinkUserStateMap
+} from './TreeWareNetworkLink'
 import {
   TreeWareNetworkNode,
   TreeWareNetworkNodeUserState,
@@ -42,17 +45,6 @@ function computeUserManipulatedGraph(
     pinCount === 0
       ? unhiddenGraph
       : computePinnedGraph(unhiddenGraph, nodeUserStateMap)
-
-  // Add links connected to remaining nodes.
-  inputGraph.links.forEach(link => {
-    if (
-      pinnedGraph.containsNode(link.source.id) &&
-      pinnedGraph.containsNode(link.target.id)
-    ) {
-      pinnedGraph.addLink(link)
-    }
-  })
-
   return pinnedGraph
 }
 
@@ -61,12 +53,22 @@ function computeUnhiddenGraph(
   nodeUserStateMap: TreeWareNetworkNodeUserStateMap
 ): { unhiddenGraph: TreeWareNetworkGraph; pinCount: number } {
   const unhiddenGraph = new TreeWareNetworkGraph()
+  // Add unhidden nodes to the graph.
   const pinCount = inputGraph.columns.reduce(
     (pinCount, inputColumn) =>
       pinCount +
       computeUnhiddenColumn(inputColumn, nodeUserStateMap, unhiddenGraph),
     0
   )
+  // Add links to the graph.
+  inputGraph.links.forEach(link => {
+    if (
+      unhiddenGraph.containsNode(link.source.id) &&
+      unhiddenGraph.containsNode(link.target.id)
+    ) {
+      unhiddenGraph.addLink(link)
+    }
+  })
   return { unhiddenGraph, pinCount }
 }
 
@@ -139,9 +141,20 @@ function computePinnedGraph(
   nodeUserStateMap: TreeWareNetworkNodeUserStateMap
 ): TreeWareNetworkGraph {
   const pinnedGraph = new TreeWareNetworkGraph()
+  // Add pinned nodes and ancestors/descendents.
   inputGraph.columns.forEach(inputColumn =>
     computePinnedColumn(inputColumn, nodeUserStateMap, pinnedGraph)
   )
+  // Add links connected to the pinned nodes.
+  inputGraph.links.forEach(link => {
+    if (isLinkEndPinned(link, nodeUserStateMap, pinnedGraph)) {
+      pinnedGraph.addLink(link)
+      // Ensure nodes (& their ancestors) on both sides of the link are in
+      // the graph.
+      ensureNodeAndAncestors(link.source.id, inputGraph, pinnedGraph)
+      ensureNodeAndAncestors(link.target.id, inputGraph, pinnedGraph)
+    }
+  })
   return pinnedGraph
 }
 
@@ -231,6 +244,45 @@ function computePinnedChildNode(
       })
     }
   }
+}
+
+function isLinkEndPinned(
+  link: TreeWareNetworkLink,
+  nodeUserStateMap: TreeWareNetworkNodeUserStateMap,
+  pinnedGraph: TreeWareNetworkGraph
+): boolean {
+  const sourceNode = pinnedGraph.nodeMap[link.source.id]
+  const sourceIsPinned = sourceNode
+    ? getNodeState('isPinned', nodeUserStateMap[link.source.id], sourceNode)
+    : false
+  const targetNode = pinnedGraph.nodeMap[link.target.id]
+  const targetIsPinned = targetNode
+    ? getNodeState('isPinned', nodeUserStateMap[link.target.id], targetNode)
+    : false
+  return sourceIsPinned || targetIsPinned
+}
+
+function ensureNodeAndAncestors(
+  nodeId: string,
+  from: TreeWareNetworkGraph,
+  to: TreeWareNetworkGraph,
+  toChild?: TreeWareNetworkNode
+) {
+  if (to.containsNode(nodeId)) {
+    if (toChild) {
+      const toNode = to.nodeMap[nodeId]
+      if (toNode.group) toNode.group.children.push(toChild)
+    }
+    return
+  }
+  const fromNode = from.nodeMap[nodeId]
+  if (!fromNode) return
+  const toNode = cloneWithoutHierarchy(fromNode)
+  if (toChild && toNode.group) toNode.group.children.push(toChild)
+  if (fromNode.parent) {
+    to.addNode(toNode)
+    ensureNodeAndAncestors(fromNode.parent.id, from, to, toNode)
+  } else to.addColumn(toNode)
 }
 
 function getNodeState<K extends keyof TreeWareNetworkNodeUserState>(
