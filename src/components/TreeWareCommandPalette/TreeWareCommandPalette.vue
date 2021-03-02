@@ -122,7 +122,9 @@ export default class TreeWareCommandPalette extends Vue {
   }
 
   private paletteTrigger(e: KeyboardEvent) {
-    e.preventDefault()
+    if (this.paletteTriggerShortKey) {
+      e.preventDefault()
+    }
     this.showChange(true)
   }
 
