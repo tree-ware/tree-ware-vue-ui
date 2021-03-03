@@ -1,4 +1,4 @@
-import { getId } from '../TreeWareNetworkGraphUtil'
+import { getId } from '../../utilities/getId'
 import { TreeWareNetworkGraph } from './TreeWareNetworkGraph'
 import {
   defaultTreeWareNetworkLinkUserState,

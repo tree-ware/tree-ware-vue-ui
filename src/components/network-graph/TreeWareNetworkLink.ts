@@ -1,5 +1,7 @@
 import { TreeWareNetworkNode } from './TreeWareNetworkNode'
 
+export const LINK_TYPE_GROUPED = 'grouped'
+
 export interface TreeWareNetworkLinkUserState {
   isSelected: boolean
 }

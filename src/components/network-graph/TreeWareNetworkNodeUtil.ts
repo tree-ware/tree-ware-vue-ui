@@ -84,3 +84,17 @@ export function sortNodeChildren(
   node.group?.children.sort(compareNodes)
   node.group?.children.forEach(child => sortNodeChildren(child, compareNodes))
 }
+
+export function isNodeCollapsed(node: TreeWareNetworkNode): boolean {
+  const hasChildren = Boolean(node.group?.children.length ?? 0)
+  return hasChildren && !node.isExpanded
+}
+
+export function getHighestCollapsedAncestor(
+  node: TreeWareNetworkNode,
+  currentHighest?: TreeWareNetworkNode
+): TreeWareNetworkNode | undefined {
+  if (!node.parent) return currentHighest
+  const newHighest = isNodeCollapsed(node.parent) ? node.parent : currentHighest
+  return getHighestCollapsedAncestor(node.parent, newHighest)
+}

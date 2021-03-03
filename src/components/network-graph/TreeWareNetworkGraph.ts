@@ -9,10 +9,17 @@ import {
 import { sortNodeChildren } from './TreeWareNetworkNodeUtil'
 
 export class TreeWareNetworkGraph {
-  readonly columns: TreeWareNetworkNode[] = []
-  readonly links: TreeWareNetworkLink[] = []
-  readonly nodeMap: { [id: string]: TreeWareNetworkNode } = {}
-  readonly linkMap: { [id: string]: TreeWareNetworkLink } = {}
+  readonly columns: TreeWareNetworkNode[]
+  readonly links: TreeWareNetworkLink[]
+  readonly nodeMap: { [id: string]: TreeWareNetworkNode }
+  readonly linkMap: { [id: string]: TreeWareNetworkLink }
+
+  constructor(graph?: TreeWareNetworkGraph) {
+    this.columns = graph ? [...graph.columns] : []
+    this.links = graph ? [...graph.links] : []
+    this.nodeMap = graph ? { ...graph.nodeMap } : {}
+    this.linkMap = graph ? { ...graph.linkMap } : {}
+  }
 
   addColumn(column: TreeWareNetworkNode): boolean {
     if (!this.addNode(column)) return false

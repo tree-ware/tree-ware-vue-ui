@@ -1,6 +1,8 @@
 import { computed, Ref } from '@vue/composition-api'
+import { getId } from '../../utilities/getId'
 import { TreeWareNetworkGraph } from './TreeWareNetworkGraph'
 import {
+  LINK_TYPE_GROUPED,
   TreeWareNetworkLink,
   TreeWareNetworkLinkComparator,
   TreeWareNetworkLinkUserStateMap
@@ -14,7 +16,9 @@ import {
 import {
   addChildToParent,
   cloneSubHierarchy,
-  cloneWithoutHierarchy
+  cloneWithoutHierarchy,
+  defaultTreeWareNetworkLinkUserState,
+  isNodeCollapsed
 } from './TreeWareNetworkNodeUtil'
 
 export function useTreeWareNetworkGraphUserManipulations(
@@ -37,35 +41,57 @@ export function useTreeWareNetworkGraphUserManipulations(
   return { userGraph }
 }
 
+interface NodeCounts {
+  pinned: number
+  collapsed: number
+}
+
+const ZERO_NODE_COUNTS = { pinned: 0, collapsed: 0 }
+
+function addNodeCounts(a: NodeCounts, b: NodeCounts): NodeCounts {
+  return {
+    pinned: a.pinned + b.pinned,
+    collapsed: a.collapsed + b.collapsed
+  }
+}
+
+// TODO(deepak-nulu): split into separate computed graphs in different files.
 function computeUserManipulatedGraph(
   inputGraph: TreeWareNetworkGraph,
   nodeUserStateMap: TreeWareNetworkNodeUserStateMap,
   linkUserStateMap: TreeWareNetworkLinkUserStateMap
 ): TreeWareNetworkGraph {
   // Filter out hidden nodes, compute number of pinned nodes.
-  const { unhiddenGraph, pinCount } = computeUnhiddenGraph(
+  const { unhiddenGraph, nodeCounts } = computeUnhiddenGraph(
     inputGraph,
     nodeUserStateMap
   )
+  // Add grouped links for collapsed nodes if there are collapsed nodes.
+  const groupedGraph =
+    nodeCounts.collapsed === 0
+      ? unhiddenGraph
+      : computeGroupedGraph(unhiddenGraph)
   // Use all nodes if there are no pinned nodes, else use pinned nodes.
   const pinnedGraph =
-    pinCount === 0
-      ? unhiddenGraph
-      : computePinnedGraph(unhiddenGraph, nodeUserStateMap)
+    nodeCounts.pinned === 0
+      ? groupedGraph
+      : computePinnedGraph(groupedGraph, nodeUserStateMap)
   return pinnedGraph
 }
 
 function computeUnhiddenGraph(
   inputGraph: TreeWareNetworkGraph,
   nodeUserStateMap: TreeWareNetworkNodeUserStateMap
-): { unhiddenGraph: TreeWareNetworkGraph; pinCount: number } {
+): { unhiddenGraph: TreeWareNetworkGraph; nodeCounts: NodeCounts } {
   const unhiddenGraph = new TreeWareNetworkGraph()
   // Add unhidden nodes to the graph.
-  const pinCount = inputGraph.columns.reduce(
-    (pinCount, inputColumn) =>
-      pinCount +
-      computeUnhiddenColumn(inputColumn, nodeUserStateMap, unhiddenGraph),
-    0
+  const nodeCounts = inputGraph.columns.reduce(
+    (nodeCounts, inputColumn) =>
+      addNodeCounts(
+        nodeCounts,
+        computeUnhiddenColumn(inputColumn, nodeUserStateMap, unhiddenGraph)
+      ),
+    ZERO_NODE_COUNTS
   )
   // Add links to the graph.
   inputGraph.links.forEach(link => {
@@ -76,17 +102,17 @@ function computeUnhiddenGraph(
       unhiddenGraph.addLink(link)
     }
   })
-  return { unhiddenGraph, pinCount }
+  return { unhiddenGraph, nodeCounts }
 }
 
 function computeUnhiddenColumn(
   inputColumn: TreeWareNetworkNode,
   nodeUserStateMap: TreeWareNetworkNodeUserStateMap,
   unhiddenGraph: TreeWareNetworkGraph
-): number {
+): NodeCounts {
   const nodeUserState = nodeUserStateMap[inputColumn.id]
   const isHidden = getNodeState('isHidden', nodeUserState, inputColumn)
-  if (isHidden) return 0
+  if (isHidden) return ZERO_NODE_COUNTS
   const unhiddenColumn = cloneWithoutHierarchy(inputColumn)
   unhiddenColumn.isPinned = getNodeState('isPinned', nodeUserState, inputColumn)
   unhiddenColumn.isExpanded = getNodeState(
@@ -95,19 +121,25 @@ function computeUnhiddenColumn(
     inputColumn
   )
   unhiddenGraph.addColumn(unhiddenColumn)
-  const grandChildrenPinCount =
+  const grandChildrenCounts =
     inputColumn.group?.children.reduce(
-      (pinCount, inputChild) =>
-        pinCount +
-        computeUnhiddenChildNode(
-          inputChild,
-          nodeUserStateMap,
-          unhiddenColumn,
-          unhiddenGraph
+      (nodeCounts, inputGrandChild) =>
+        addNodeCounts(
+          nodeCounts,
+          computeUnhiddenChildNode(
+            inputGrandChild,
+            nodeUserStateMap,
+            unhiddenColumn,
+            unhiddenGraph
+          )
         ),
-      0
-    ) ?? 0
-  return (unhiddenColumn.isPinned ? 1 : 0) + grandChildrenPinCount
+      ZERO_NODE_COUNTS
+    ) ?? ZERO_NODE_COUNTS
+  const columnCounts: NodeCounts = {
+    pinned: unhiddenColumn.isPinned ? 1 : 0,
+    collapsed: isNodeCollapsed(unhiddenColumn) ? 1 : 0
+  }
+  return addNodeCounts(columnCounts, grandChildrenCounts)
 }
 
 function computeUnhiddenChildNode(
@@ -115,10 +147,10 @@ function computeUnhiddenChildNode(
   nodeUserStateMap: TreeWareNetworkNodeUserStateMap,
   unhiddenParent: TreeWareNetworkNode,
   unhiddenGraph: TreeWareNetworkGraph
-): number {
+): NodeCounts {
   const nodeUserState = nodeUserStateMap[inputChild.id]
   const isHidden = getNodeState('isHidden', nodeUserState, inputChild)
-  if (isHidden) return 0
+  if (isHidden) return ZERO_NODE_COUNTS
   const unhiddenChild = cloneWithoutHierarchy(inputChild)
   unhiddenChild.isPinned = getNodeState('isPinned', nodeUserState, inputChild)
   unhiddenChild.isExpanded = getNodeState(
@@ -128,19 +160,110 @@ function computeUnhiddenChildNode(
   )
   addChildToParent(unhiddenChild, unhiddenParent)
   unhiddenGraph.addNode(unhiddenChild)
-  const grandChildrenPinCount =
+  const grandChildrenCounts =
     inputChild.group?.children.reduce(
-      (pinCount, inputChild) =>
-        pinCount +
-        computeUnhiddenChildNode(
-          inputChild,
-          nodeUserStateMap,
-          unhiddenChild,
-          unhiddenGraph
+      (nodeCounts, inputGrandChild) =>
+        addNodeCounts(
+          nodeCounts,
+          computeUnhiddenChildNode(
+            inputGrandChild,
+            nodeUserStateMap,
+            unhiddenChild,
+            unhiddenGraph
+          )
         ),
-      0
-    ) ?? 0
-  return (unhiddenChild.isPinned ? 1 : 0) + grandChildrenPinCount
+      ZERO_NODE_COUNTS
+    ) ?? ZERO_NODE_COUNTS
+  const childCounts: NodeCounts = {
+    pinned: unhiddenChild.isPinned ? 1 : 0,
+    collapsed: isNodeCollapsed(unhiddenChild) ? 1 : 0
+  }
+  return addNodeCounts(childCounts, grandChildrenCounts)
+}
+
+type AncestorMap = { [nodeId: string]: TreeWareNetworkNode }
+
+function computeGroupedGraph(
+  inputGraph: TreeWareNetworkGraph
+): TreeWareNetworkGraph {
+  // Clone inputGraph
+  const groupedGraph = new TreeWareNetworkGraph(inputGraph)
+  // Create a map of collapsed nodes to their highest collapsed ancestors.
+  // TODO(performance): compute the above map instead of collapsed count first.
+  const ancestorMap = computeAncestorMapForGraph(groupedGraph)
+  // Add links with ancestors.
+  groupedGraph.links.forEach(link => {
+    const groupLink = getGroupLinkForLink(link, groupedGraph, ancestorMap)
+    if (groupLink) groupedGraph.addLink(groupLink)
+  })
+  return groupedGraph
+}
+
+function computeAncestorMapForGraph(graph: TreeWareNetworkGraph): AncestorMap {
+  const ancestorMap = {}
+  graph.columns.forEach(column => {
+    computeAncestorMapForNode(column, ancestorMap)
+  })
+  return ancestorMap
+}
+
+function computeAncestorMapForNode(
+  node: TreeWareNetworkNode,
+  ancestorMap: AncestorMap
+) {
+  if (isNodeCollapsed(node))
+    addDescendantsToAncestorMap(node, ancestorMap, node)
+  else {
+    node.group?.children.forEach(child =>
+      computeAncestorMapForNode(child, ancestorMap)
+    )
+  }
+}
+
+function addDescendantsToAncestorMap(
+  node: TreeWareNetworkNode,
+  ancestorMap: AncestorMap,
+  ancestor: TreeWareNetworkNode
+) {
+  node.group?.children.forEach(child => {
+    ancestorMap[child.id] = ancestor
+    addDescendantsToAncestorMap(child, ancestorMap, ancestor)
+  })
+}
+
+function getGroupLinkForLink(
+  inputLink: TreeWareNetworkLink,
+  inputGraph: TreeWareNetworkGraph,
+  ancestorMap: AncestorMap
+): TreeWareNetworkLink | undefined {
+  const source = inputGraph.nodeMap[inputLink.source.id]
+  const target = inputGraph.nodeMap[inputLink.target.id]
+  if (!source || !target) return undefined
+  const sourceAncestor = ancestorMap[inputLink.source.id]
+  const targetAncestor = ancestorMap[inputLink.target.id]
+  if (sourceAncestor && targetAncestor) {
+    return getGroupLinkForNodes(sourceAncestor, targetAncestor)
+  } else if (sourceAncestor) {
+    return getGroupLinkForNodes(sourceAncestor, target)
+  } else if (targetAncestor) {
+    return getGroupLinkForNodes(source, targetAncestor)
+  } else return undefined
+}
+
+function getGroupLinkForNodes(
+  source: TreeWareNetworkNode,
+  target: TreeWareNetworkNode
+): TreeWareNetworkLink {
+  return {
+    id: getId(source.id, target.id),
+    source,
+    target,
+    linkType: LINK_TYPE_GROUPED,
+    classes: [],
+    data: null,
+    ...defaultTreeWareNetworkLinkUserState,
+    canSelect: false
+  }
 }
 
 function computePinnedGraph(
