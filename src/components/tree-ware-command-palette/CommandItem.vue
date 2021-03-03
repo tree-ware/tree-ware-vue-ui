@@ -2,9 +2,9 @@
   <div @click="itemSelect(commandItemData)" ref="itemContainer">
     <component
       :is="commandItemContent"
-      :commandCategoryMap="commandCategoryMap"
-      :commandItemData="commandItemData"
-      :isSelected="isSelected"
+      :command-category-map="commandCategoryMap"
+      :command-item-data="commandItemData"
+      :is-selected="isSelected"
     />
   </div>
 </template>

@@ -1,6 +1,6 @@
 <template>
-  <div class="palette-popup" v-if="show" @click="clickOuterContent">
-    <div class="palette-bg-fill" />
+  <div class="tree-ware-basic-popup" v-if="show" @click="clickOuterContent">
+    <div class="popup-bg-fill" />
     <div class="content" :style="style" :class="{ fullscreen: fullScreen }">
       <slot></slot>
     </div>
@@ -15,7 +15,7 @@ import { Component, Vue, Prop } from 'vue-property-decorator'
 export default class TreeWareBasicPopup extends Vue {
   @Prop({ default: false }) readonly show!: boolean
   @Prop({ default: 500 }) readonly popupWidth!: number
-  @Prop({ default: '30%' }) readonly topOffSetInPercentage!: string
+  @Prop({ default: '30%' }) readonly topOffsetInPercentage!: string
   @Prop({ default: 'px' }) readonly lengthUnit!: string
   @Prop({ default: false }) readonly fullScreen!: boolean
 
@@ -24,14 +24,17 @@ export default class TreeWareBasicPopup extends Vue {
       ? {
           width: `${this.popupWidth}${this.lengthUnit}`,
           left: `calc(50% - ${this.popupWidth / 2}${this.lengthUnit})`,
-          top: `${this.topOffSetInPercentage}`
+          top: `${this.topOffsetInPercentage}`
         }
       : {}
   }
 
   private clickOuterContent(e: MouseEvent) {
     const targetClass = (e.target as HTMLElement).className
-    if (targetClass === 'palette-popup' || targetClass === 'palette-bg-fill') {
+    if (
+      targetClass === 'tree-ware-basic-popup' ||
+      targetClass === 'popup-bg-fill'
+    ) {
       this.$emit('click-outer-content')
     }
   }
@@ -41,14 +44,14 @@ export default class TreeWareBasicPopup extends Vue {
 $background-color: rgba(var(--vs-dark), 1);
 $border-color: grey;
 
-.palette-popup {
+.tree-ware-basic-popup {
   width: 100%;
   height: 100%;
   position: fixed;
   top: 0;
   left: 0;
   z-index: 100000;
-  .palette-bg-fill {
+  .popup-bg-fill {
     width: 100%;
     height: 100%;
     position: fixed;

@@ -2,20 +2,20 @@
   <div>
     <component
       :is="keyManager"
-      :triggerShortKey="upArrowShortcut"
-      :ignoreInputElement="false"
+      :trigger-short-key="upArrowShortcut"
+      :ignore-input-element="false"
       @key-trigger="upArrowTrigger"
     />
     <component
       :is="keyManager"
-      :triggerShortKey="downArrowShortcut"
-      :ignoreInputElement="false"
+      :trigger-short-key="downArrowShortcut"
+      :ignore-input-element="false"
       @key-trigger="downArrowTigger"
     />
     <component
       :is="keyManager"
-      :triggerShortKey="enterKeyShortcut"
-      :ignoreInputElement="false"
+      :trigger-short-key="enterKeyShortcut"
+      :ignore-input-element="false"
       @key-trigger="enterKeyTrigger"
     />
     <div
@@ -25,10 +25,10 @@
       <component
         :is="commandItem"
         v-for="(command, index) in commandItemDataList"
-        :selectedItem="selectedItem"
-        :commandItemContent="commandItemContent"
-        :commandItemData="command"
-        :commandCategoryMap="commandCategoryMap"
+        :selected-item="selectedItem"
+        :command-item-content="commandItemContent"
+        :command-item-data="command"
+        :command-category-map="commandCategoryMap"
         @item-select="itemSelectFromClick($event, index)"
         :key="index"
       />

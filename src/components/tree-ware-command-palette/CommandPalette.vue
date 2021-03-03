@@ -1,23 +1,23 @@
 <template>
-  <div>
+  <div class="command-palette">
     <component
       :is="keyManager"
-      :triggerShortKey="paletteTriggerShortKey"
+      :trigger-short-key="paletteTriggerShortKey"
       @key-trigger="paletteTrigger"
     />
     <component
       :is="keyManager"
-      :triggerShortKey="escKeyShortcut"
-      :ignoreInputElement="false"
+      :trigger-short-key="escKeyShortcut"
+      :ignore-input-element="false"
       @key-trigger="escTrigger"
     />
     <component
       :is="popup"
-      :popupWidth="popupWidth"
-      :topOffSetInPercentage="topOffSetInPercentage"
-      :lengthUnit="lengthUnit"
+      :popup-width="popupWidth"
+      :top-offset-in-percentage="topOffsetInPercentage"
+      :length-unit="lengthUnit"
       :show="show"
-      :fullScreen="fullScreen"
+      :full-screen="fullScreen"
       @click-outer-content="clickOuterContent"
     >
       <div class="content-container">
@@ -25,12 +25,12 @@
         <component :is="paletteInput" @change="searchStringChange" />
         <component
           :is="commandList"
-          :commandItem="commandItem"
-          :commandItemContent="commandItemContent"
-          :commandItemDataList="commandFilteredList"
-          :commandCategoryMap="commandCategoryMap"
-          :keyManager="keyManager"
-          :commandNotFound="commandNotFound"
+          :command-item="commandItem"
+          :command-item-content="commandItemContent"
+          :command-item-data-list="commandFilteredList"
+          :command-category-map="commandCategoryMap"
+          :key-manager="keyManager"
+          :command-not-found="commandNotFound"
           @apply="apply"
         />
       </div>
@@ -49,7 +49,7 @@ import {
   CommandItemData,
   KeyShortCut
 } from './CommandInterfaces'
-import TreeWareBasicPopup from './TreeWareBasicPopup.vue'
+import TreeWareBasicPopup from '@/tree-ware-vue-ui/src/components/TreeWareBasicPopup.vue'
 import CommandItemContent from './CommandItemContent.vue'
 import CommandItem from './CommandItem.vue'
 import PaletteKeyManager from './PaletteKeyManager'
@@ -67,14 +67,14 @@ const KEY_ESCAPE = 'Escape'
     CommandNotFound
   }
 })
-export default class TreeWareCommandPalette extends Vue {
+export default class CommandPalette extends Vue {
   @Prop() readonly commandItemDataList!: CommandItemData[]
   @Prop() readonly commandCategoryMap!: CommandCategoryMap
   @Prop({ default: 500 }) readonly popupWidth!: number
-  @Prop({ default: '30%' }) readonly topOffSetInPercentage!: string
+  @Prop({ default: '30%' }) readonly topOffsetInPercentage!: string
   @Prop({ default: 'px' }) readonly lengthUnit!: string
   @Prop({ default: false }) readonly fullScreen!: boolean
-  @Prop() readonly paletteTriggerShortKey!: KeyShortCut
+  @Prop({ default: undefined }) readonly paletteTriggerShortKey!: KeyShortCut
 
   // Template for command item content
   @Prop({ default: CommandItemContent, type: Function })
