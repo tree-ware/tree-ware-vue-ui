@@ -1,10 +1,8 @@
 <template>
   <div class="tree-ware-network-graph-view">
     <div class="nodes">
-      <tree-ware-network-node-view
-        v-for="column in graph.columns"
-        :key="column.id"
-        :node="column"
+      <tree-ware-network-column-layout
+        :graph="graph"
         @pin-click="pinClick"
         @expand-click="expandClick"
         @hide-click="hideClick"
@@ -50,9 +48,9 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api'
+import TreeWareNetworkColumnLayout from './TreeWareNetworkColumnLayout.vue'
 import { TreeWareNetworkGraph } from './TreeWareNetworkGraph'
 import TreeWareNetworkLinkView from './TreeWareNetworkLinkView.vue'
-import TreeWareNetworkNodeView from './TreeWareNetworkNodeView.vue'
 import { useTreeWareNetworkGraph } from './useTreeWareNetworkGraph'
 
 export default defineComponent({
@@ -60,8 +58,8 @@ export default defineComponent({
     graph: { type: Object as PropType<TreeWareNetworkGraph>, required: true }
   },
   components: {
-    TreeWareNetworkLinkView,
-    TreeWareNetworkNodeView
+    TreeWareNetworkColumnLayout,
+    TreeWareNetworkLinkView
   },
   setup(props, { emit, refs }) {
     const { graph } = toRefs(props)
