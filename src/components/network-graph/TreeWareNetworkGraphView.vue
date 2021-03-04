@@ -1,14 +1,15 @@
 <template>
   <div class="tree-ware-network-graph-view">
-    <div class="nodes">
-      <tree-ware-network-column-layout
-        :graph="graph"
-        @pin-click="pinClick"
-        @expand-click="expandClick"
-        @hide-click="hideClick"
-        @alert-click="alertClick"
-      />
-    </div>
+    <component
+      :is="graph.root.expandedContent"
+      :id="graph.root.id"
+      :node="graph.root"
+      @pin-click="pinClick"
+      @expand-click="expandClick"
+      @hide-click="hideClick"
+      @alert-click="alertClick"
+      class="root"
+    />
 
     <svg class="links">
       <defs>
@@ -48,7 +49,6 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api'
-import TreeWareNetworkColumnLayout from './TreeWareNetworkColumnLayout.vue'
 import { TreeWareNetworkGraph } from './TreeWareNetworkGraph'
 import TreeWareNetworkLinkView from './TreeWareNetworkLinkView.vue'
 import { useTreeWareNetworkGraph } from './useTreeWareNetworkGraph'
@@ -58,7 +58,6 @@ export default defineComponent({
     graph: { type: Object as PropType<TreeWareNetworkGraph>, required: true }
   },
   components: {
-    TreeWareNetworkColumnLayout,
     TreeWareNetworkLinkView
   },
   setup(props, { emit, refs }) {
@@ -92,15 +91,6 @@ export default defineComponent({
     pointer-events: none; // link component re-enables pointer-events
     height: 100%;
     width: 100%;
-  }
-
-  .nodes {
-    background: transparent;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    width: 100%;
-    height: auto;
   }
 
   marker#test {

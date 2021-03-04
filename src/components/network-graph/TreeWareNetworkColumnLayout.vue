@@ -5,8 +5,10 @@
       :key="index"
       :class="['column', 'column' + index]"
     >
-      <tree-ware-network-node-view
+      <component
         v-if="column"
+        :is="column.expandedContent"
+        :id="column.id"
         :node="column"
         @pin-click="pinClick"
         @expand-click="expandClick"
@@ -25,35 +27,31 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api'
-import { TreeWareNetworkGraph } from './TreeWareNetworkGraph'
 import { TreeWareNetworkNode } from './TreeWareNetworkNode'
-import TreeWareNetworkNodeView from './TreeWareNetworkNodeView.vue'
 import { useTreeWareNetworkToolbarEmits } from './useTreeWareNetworkToolbarEmits'
 
 export default defineComponent({
   props: {
-    graph: {
-      type: Object as PropType<TreeWareNetworkGraph>,
+    node: {
+      type: Object as PropType<TreeWareNetworkNode>,
       required: true
     }
   },
-  components: {
-    TreeWareNetworkNodeView
-  },
   setup(props, { emit }) {
-    const { graph } = toRefs(props)
+    const { node } = toRefs(props)
 
     const columns: ComputedRef<(TreeWareNetworkNode | undefined)[]> = computed(
       () => {
-        const maxColumnIndex = graph.value.columns.reduce(
-          (max, column) => (column.data.index > max ? column.data.index : max),
-          0
-        )
+        const maxColumnIndex =
+          node.value.group?.children.reduce(
+            (max, child) => (child.data.index > max ? child.data.index : max),
+            0
+          ) ?? 0
         const indexedColumns = new Array<TreeWareNetworkNode | undefined>(
           maxColumnIndex + 1
         )
-        graph.value.columns.forEach(column => {
-          indexedColumns[column.data.index] = column
+        node.value.group?.children.forEach(child => {
+          indexedColumns[child.data.index] = child
         })
         return indexedColumns
       }

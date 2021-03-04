@@ -9,22 +9,18 @@ import {
 import { sortNodeChildren } from './TreeWareNetworkNodeUtil'
 
 export class TreeWareNetworkGraph {
-  readonly columns: TreeWareNetworkNode[]
   readonly links: TreeWareNetworkLink[]
   readonly nodeMap: { [id: string]: TreeWareNetworkNode }
   readonly linkMap: { [id: string]: TreeWareNetworkLink }
 
-  constructor(graph?: TreeWareNetworkGraph) {
-    this.columns = graph ? [...graph.columns] : []
+  constructor(
+    readonly root: TreeWareNetworkNode,
+    graph?: TreeWareNetworkGraph // shallow cloned if specified
+  ) {
     this.links = graph ? [...graph.links] : []
     this.nodeMap = graph ? { ...graph.nodeMap } : {}
     this.linkMap = graph ? { ...graph.linkMap } : {}
-  }
-
-  addColumn(column: TreeWareNetworkNode): boolean {
-    if (!this.addNode(column)) return false
-    this.columns.push(column)
-    return true
+    this.addNode(root)
   }
 
   addNode(node: TreeWareNetworkNode): boolean {
@@ -45,8 +41,10 @@ export class TreeWareNetworkGraph {
   }
 
   sortNodes(compareNodes: TreeWareNetworkNodeComparator) {
-    this.columns.sort(compareNodes)
-    this.columns.forEach(column => sortNodeChildren(column, compareNodes))
+    this.root.group?.children.sort(compareNodes)
+    this.root.group?.children.forEach(child =>
+      sortNodeChildren(child, compareNodes)
+    )
   }
 
   sortLinks(compareLinks: TreeWareNetworkLinkComparator) {

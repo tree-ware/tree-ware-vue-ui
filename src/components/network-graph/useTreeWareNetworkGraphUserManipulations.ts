@@ -83,15 +83,14 @@ function computeUnhiddenGraph(
   inputGraph: TreeWareNetworkGraph,
   nodeUserStateMap: TreeWareNetworkNodeUserStateMap
 ): { unhiddenGraph: TreeWareNetworkGraph; nodeCounts: NodeCounts } {
-  const unhiddenGraph = new TreeWareNetworkGraph()
+  const unhiddenRoot = cloneWithoutHierarchy(inputGraph.root)
+  const unhiddenGraph = new TreeWareNetworkGraph(unhiddenRoot)
   // Add unhidden nodes to the graph.
-  const nodeCounts = inputGraph.columns.reduce(
-    (nodeCounts, inputColumn) =>
-      addNodeCounts(
-        nodeCounts,
-        computeUnhiddenColumn(inputColumn, nodeUserStateMap, unhiddenGraph)
-      ),
-    ZERO_NODE_COUNTS
+  const nodeCounts = computeUnhiddenNode(
+    inputGraph.root,
+    nodeUserStateMap,
+    inputGraph.root.parent,
+    unhiddenGraph
   )
   // Add links to the graph.
   inputGraph.links.forEach(link => {
@@ -105,80 +104,41 @@ function computeUnhiddenGraph(
   return { unhiddenGraph, nodeCounts }
 }
 
-function computeUnhiddenColumn(
-  inputColumn: TreeWareNetworkNode,
+function computeUnhiddenNode(
+  inputNode: TreeWareNetworkNode,
   nodeUserStateMap: TreeWareNetworkNodeUserStateMap,
+  unhiddenParent: TreeWareNetworkNode | null,
   unhiddenGraph: TreeWareNetworkGraph
 ): NodeCounts {
-  const nodeUserState = nodeUserStateMap[inputColumn.id]
-  const isHidden = getNodeState('isHidden', nodeUserState, inputColumn)
+  const nodeUserState = nodeUserStateMap[inputNode.id]
+  const isHidden = getNodeState('isHidden', nodeUserState, inputNode)
   if (isHidden) return ZERO_NODE_COUNTS
-  const unhiddenColumn = cloneWithoutHierarchy(inputColumn)
-  unhiddenColumn.isPinned = getNodeState('isPinned', nodeUserState, inputColumn)
-  unhiddenColumn.isExpanded = getNodeState(
-    'isExpanded',
-    nodeUserState,
-    inputColumn
-  )
-  unhiddenGraph.addColumn(unhiddenColumn)
-  const grandChildrenCounts =
-    inputColumn.group?.children.reduce(
-      (nodeCounts, inputGrandChild) =>
+  // Root node will already be in `unhiddenGraph`.
+  const unhiddenNode =
+    unhiddenGraph.nodeMap[inputNode.id] ?? cloneWithoutHierarchy(inputNode)
+  unhiddenNode.isPinned = getNodeState('isPinned', nodeUserState, inputNode)
+  unhiddenNode.isExpanded = getNodeState('isExpanded', nodeUserState, inputNode)
+  if (unhiddenParent) addChildToParent(unhiddenNode, unhiddenParent)
+  unhiddenGraph.addNode(unhiddenNode)
+  const childrenCounts =
+    inputNode.group?.children.reduce(
+      (nodeCounts, inputChild) =>
         addNodeCounts(
           nodeCounts,
-          computeUnhiddenChildNode(
-            inputGrandChild,
+          computeUnhiddenNode(
+            inputChild,
             nodeUserStateMap,
-            unhiddenColumn,
+            unhiddenNode,
             unhiddenGraph
           )
         ),
       ZERO_NODE_COUNTS
     ) ?? ZERO_NODE_COUNTS
-  const columnCounts: NodeCounts = {
-    pinned: unhiddenColumn.isPinned ? 1 : 0,
-    collapsed: isNodeCollapsed(unhiddenColumn) ? 1 : 0
+  const nodeCounts: NodeCounts = {
+    pinned: unhiddenNode.isPinned ? 1 : 0,
+    collapsed: isNodeCollapsed(unhiddenNode) ? 1 : 0
   }
-  return addNodeCounts(columnCounts, grandChildrenCounts)
-}
-
-function computeUnhiddenChildNode(
-  inputChild: TreeWareNetworkNode,
-  nodeUserStateMap: TreeWareNetworkNodeUserStateMap,
-  unhiddenParent: TreeWareNetworkNode,
-  unhiddenGraph: TreeWareNetworkGraph
-): NodeCounts {
-  const nodeUserState = nodeUserStateMap[inputChild.id]
-  const isHidden = getNodeState('isHidden', nodeUserState, inputChild)
-  if (isHidden) return ZERO_NODE_COUNTS
-  const unhiddenChild = cloneWithoutHierarchy(inputChild)
-  unhiddenChild.isPinned = getNodeState('isPinned', nodeUserState, inputChild)
-  unhiddenChild.isExpanded = getNodeState(
-    'isExpanded',
-    nodeUserState,
-    inputChild
-  )
-  addChildToParent(unhiddenChild, unhiddenParent)
-  unhiddenGraph.addNode(unhiddenChild)
-  const grandChildrenCounts =
-    inputChild.group?.children.reduce(
-      (nodeCounts, inputGrandChild) =>
-        addNodeCounts(
-          nodeCounts,
-          computeUnhiddenChildNode(
-            inputGrandChild,
-            nodeUserStateMap,
-            unhiddenChild,
-            unhiddenGraph
-          )
-        ),
-      ZERO_NODE_COUNTS
-    ) ?? ZERO_NODE_COUNTS
-  const childCounts: NodeCounts = {
-    pinned: unhiddenChild.isPinned ? 1 : 0,
-    collapsed: isNodeCollapsed(unhiddenChild) ? 1 : 0
-  }
-  return addNodeCounts(childCounts, grandChildrenCounts)
+  return addNodeCounts(nodeCounts, childrenCounts)
 }
 
 type AncestorMap = { [nodeId: string]: TreeWareNetworkNode }
@@ -187,10 +147,11 @@ function computeGroupedGraph(
   inputGraph: TreeWareNetworkGraph
 ): TreeWareNetworkGraph {
   // Clone inputGraph
-  const groupedGraph = new TreeWareNetworkGraph(inputGraph)
+  const groupedGraph = new TreeWareNetworkGraph(inputGraph.root, inputGraph)
   // Create a map of collapsed nodes to their highest collapsed ancestors.
   // TODO(performance): compute the above map instead of collapsed count first.
-  const ancestorMap = computeAncestorMapForGraph(groupedGraph)
+  const ancestorMap: AncestorMap = {}
+  computeAncestorMap(groupedGraph.root, ancestorMap)
   // Add links with ancestors.
   groupedGraph.links.forEach(link => {
     const groupLink = getGroupLinkForLink(link, groupedGraph, ancestorMap)
@@ -199,23 +160,15 @@ function computeGroupedGraph(
   return groupedGraph
 }
 
-function computeAncestorMapForGraph(graph: TreeWareNetworkGraph): AncestorMap {
-  const ancestorMap = {}
-  graph.columns.forEach(column => {
-    computeAncestorMapForNode(column, ancestorMap)
-  })
-  return ancestorMap
-}
-
-function computeAncestorMapForNode(
+function computeAncestorMap(
   node: TreeWareNetworkNode,
   ancestorMap: AncestorMap
 ) {
-  if (isNodeCollapsed(node))
+  if (isNodeCollapsed(node)) {
     addDescendantsToAncestorMap(node, ancestorMap, node)
-  else {
+  } else {
     node.group?.children.forEach(child =>
-      computeAncestorMapForNode(child, ancestorMap)
+      computeAncestorMap(child, ancestorMap)
     )
   }
 }
@@ -270,10 +223,14 @@ function computePinnedGraph(
   inputGraph: TreeWareNetworkGraph,
   nodeUserStateMap: TreeWareNetworkNodeUserStateMap
 ): TreeWareNetworkGraph {
-  const pinnedGraph = new TreeWareNetworkGraph()
+  const pinnedRoot = cloneWithoutHierarchy(inputGraph.root)
+  const pinnedGraph = new TreeWareNetworkGraph(pinnedRoot)
   // Add pinned nodes and ancestors/descendents.
-  inputGraph.columns.forEach(inputColumn =>
-    computePinnedColumn(inputColumn, nodeUserStateMap, pinnedGraph)
+  computePinnedNode(
+    inputGraph.root,
+    nodeUserStateMap,
+    inputGraph.root.parent,
+    pinnedGraph
   )
   // Add links connected to the pinned nodes.
   inputGraph.links.forEach(link => {
@@ -288,89 +245,38 @@ function computePinnedGraph(
   return pinnedGraph
 }
 
-function computePinnedColumn(
-  inputColumn: TreeWareNetworkNode,
+function computePinnedNode(
+  inputNode: TreeWareNetworkNode,
   nodeUserStateMap: TreeWareNetworkNodeUserStateMap,
+  pinnedParent: TreeWareNetworkNode | null,
   pinnedGraph: TreeWareNetworkGraph
 ) {
-  const pinnedColumn = cloneWithoutHierarchy(inputColumn)
-  inputColumn.group?.children.forEach(inputGrandChild => {
-    computePinnedChildNode(
-      inputGrandChild,
-      nodeUserStateMap,
-      pinnedColumn,
-      pinnedGraph
-    )
+  // Root node will already be in `pinnedGraph`.
+  const pinnedNode =
+    pinnedGraph.nodeMap[inputNode.id] ?? cloneWithoutHierarchy(inputNode)
+  inputNode.group?.children.forEach(inputChild => {
+    computePinnedNode(inputChild, nodeUserStateMap, pinnedNode, pinnedGraph)
   })
-  const inputColumnIsPinned =
-    getNodeState('isPinned', nodeUserStateMap[inputColumn.id], inputColumn) ??
-    false
-  const pinnedColumnHasChildren =
-    pinnedColumn.group && pinnedColumn.group.children.length > 0
-  if (inputColumnIsPinned || pinnedColumnHasChildren) {
-    pinnedGraph.addColumn(pinnedColumn)
+  const inputNodeIsPinned =
+    getNodeState('isPinned', nodeUserStateMap[inputNode.id], inputNode) ?? false
+  const pinnedNodeHasChildren =
+    pinnedNode.group && pinnedNode.group.children.length > 0
+  if (inputNodeIsPinned || pinnedNodeHasChildren) {
+    if (pinnedParent) addChildToParent(pinnedNode, pinnedParent)
+    pinnedGraph.addNode(pinnedNode)
   }
-  if (inputColumnIsPinned) {
+  if (inputNodeIsPinned) {
     // Add all immediate children if none of them are pinned.
     const hasPinnedImmediateChildren =
-      inputColumn.group?.children.some(inputGrandChild =>
-        getNodeState(
-          'isPinned',
-          nodeUserStateMap[inputGrandChild.id],
-          inputGrandChild
-        )
+      inputNode.group?.children.some(inputChild =>
+        getNodeState('isPinned', nodeUserStateMap[inputChild.id], inputChild)
       ) ?? false
     if (!hasPinnedImmediateChildren) {
-      inputColumn.group?.children.forEach(inputGrandChild => {
-        if (pinnedGraph.containsNode(inputGrandChild.id)) return
-        const includeGrandChild = cloneSubHierarchy(inputGrandChild)
-        addChildToParent(includeGrandChild, pinnedColumn)
-        pinnedGraph.addNode(includeGrandChild)
-      })
-    }
-  }
-}
-
-function computePinnedChildNode(
-  inputChild: TreeWareNetworkNode,
-  nodeUserStateMap: TreeWareNetworkNodeUserStateMap,
-  pinnedParent: TreeWareNetworkNode,
-  pinnedGraph: TreeWareNetworkGraph
-) {
-  const pinnedChild = cloneWithoutHierarchy(inputChild)
-  inputChild.group?.children.forEach(inputGrandChild => {
-    computePinnedChildNode(
-      inputGrandChild,
-      nodeUserStateMap,
-      pinnedChild,
-      pinnedGraph
-    )
-  })
-  const inputChildIsPinned =
-    getNodeState('isPinned', nodeUserStateMap[inputChild.id], inputChild) ??
-    false
-  const pinnedChildHasChildren =
-    pinnedChild.group && pinnedChild.group.children.length > 0
-  if (inputChildIsPinned || pinnedChildHasChildren) {
-    addChildToParent(pinnedChild, pinnedParent)
-    pinnedGraph.addNode(pinnedChild)
-  }
-  if (inputChildIsPinned) {
-    // Add all immediate children if none of them are pinned.
-    const hasPinnedImmediateChildren =
-      inputChild.group?.children.some(inputGrandChild =>
-        getNodeState(
-          'isPinned',
-          nodeUserStateMap[inputGrandChild.id],
-          inputGrandChild
-        )
-      ) ?? false
-    if (!hasPinnedImmediateChildren) {
-      inputChild.group?.children.forEach(inputGrandChild => {
-        if (pinnedGraph.containsNode(inputGrandChild.id)) return
-        const includeGrandChild = cloneSubHierarchy(inputGrandChild)
-        addChildToParent(includeGrandChild, pinnedChild)
-        pinnedGraph.addNode(includeGrandChild)
+      inputNode.group?.children.forEach(inputChild => {
+        if (pinnedGraph.containsNode(inputChild.id)) return
+        const includeChild = cloneSubHierarchy(inputChild)
+        addChildToParent(includeChild, pinnedNode)
+        pinnedGraph.addNode(includeChild)
       })
     }
   }
@@ -407,12 +313,13 @@ function ensureNodeAndAncestors(
   }
   const fromNode = from.nodeMap[nodeId]
   if (!fromNode) return
-  const toNode = cloneWithoutHierarchy(fromNode)
+  // Root node will already be in `to`.
+  const toNode = to.nodeMap[fromNode.id] ?? cloneWithoutHierarchy(fromNode)
   if (toChild && toNode.group) toNode.group.children.push(toChild)
   if (fromNode.parent) {
     to.addNode(toNode)
     ensureNodeAndAncestors(fromNode.parent.id, from, to, toNode)
-  } else to.addColumn(toNode)
+  }
 }
 
 function getNodeState<K extends keyof TreeWareNetworkNodeUserState>(
