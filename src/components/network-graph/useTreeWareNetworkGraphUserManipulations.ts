@@ -1,4 +1,4 @@
-import { computed, Ref } from '@vue/composition-api'
+import { computed, ref, Ref } from '@vue/composition-api'
 import { getId } from '../../utilities/getId'
 import { TreeWareNetworkGraph } from './TreeWareNetworkGraph'
 import {
@@ -10,9 +10,14 @@ import {
 import {
   TreeWareNetworkNode,
   TreeWareNetworkNodeComparator,
-  TreeWareNetworkNodeUserState,
+  TreeWareNetworkNodeUserStateCounts,
   TreeWareNetworkNodeUserStateMap
 } from './TreeWareNetworkNode'
+import {
+  addNodeCounts,
+  getNodeState,
+  ZERO_NODE_COUNTS
+} from './TreeWareNetworkNodeUserStateUtil'
 import {
   addChildToParent,
   cloneSubHierarchy,
@@ -28,31 +33,19 @@ export function useTreeWareNetworkGraphUserManipulations(
   compareNodes?: TreeWareNetworkNodeComparator,
   compareLinks?: TreeWareNetworkLinkComparator
 ) {
+  const nodeUserStateCounts = ref(ZERO_NODE_COUNTS)
   const userGraph = computed(() => {
-    const graph = computeUserManipulatedGraph(
+    const { graph, nodeCounts } = computeUserManipulatedGraph(
       inputGraph.value,
       nodeUserStateMap.value,
       linkUserStateMap.value
     )
     if (compareNodes) graph.sortNodes(compareNodes)
     if (compareLinks) graph.sortLinks(compareLinks)
+    nodeUserStateCounts.value = nodeCounts
     return graph
   })
-  return { userGraph }
-}
-
-interface NodeCounts {
-  pinned: number
-  collapsed: number
-}
-
-const ZERO_NODE_COUNTS = { pinned: 0, collapsed: 0 }
-
-function addNodeCounts(a: NodeCounts, b: NodeCounts): NodeCounts {
-  return {
-    pinned: a.pinned + b.pinned,
-    collapsed: a.collapsed + b.collapsed
-  }
+  return { userGraph, nodeUserStateCounts }
 }
 
 // TODO(deepak-nulu): split into separate computed graphs in different files.
@@ -60,7 +53,10 @@ function computeUserManipulatedGraph(
   inputGraph: TreeWareNetworkGraph,
   nodeUserStateMap: TreeWareNetworkNodeUserStateMap,
   linkUserStateMap: TreeWareNetworkLinkUserStateMap
-): TreeWareNetworkGraph {
+): {
+  graph: TreeWareNetworkGraph
+  nodeCounts: TreeWareNetworkNodeUserStateCounts
+} {
   // Filter out hidden nodes, compute number of pinned nodes.
   const { unhiddenGraph, nodeCounts } = computeUnhiddenGraph(
     inputGraph,
@@ -76,13 +72,16 @@ function computeUserManipulatedGraph(
     nodeCounts.pinned === 0
       ? groupedGraph
       : computePinnedGraph(groupedGraph, nodeUserStateMap)
-  return pinnedGraph
+  return { graph: pinnedGraph, nodeCounts }
 }
 
 function computeUnhiddenGraph(
   inputGraph: TreeWareNetworkGraph,
   nodeUserStateMap: TreeWareNetworkNodeUserStateMap
-): { unhiddenGraph: TreeWareNetworkGraph; nodeCounts: NodeCounts } {
+): {
+  unhiddenGraph: TreeWareNetworkGraph
+  nodeCounts: TreeWareNetworkNodeUserStateCounts
+} {
   const unhiddenRoot = cloneWithoutHierarchy(inputGraph.root)
   const unhiddenGraph = new TreeWareNetworkGraph(unhiddenRoot)
   // Add unhidden nodes to the graph.
@@ -109,10 +108,10 @@ function computeUnhiddenNode(
   nodeUserStateMap: TreeWareNetworkNodeUserStateMap,
   unhiddenParent: TreeWareNetworkNode | null,
   unhiddenGraph: TreeWareNetworkGraph
-): NodeCounts {
+): TreeWareNetworkNodeUserStateCounts {
   const nodeUserState = nodeUserStateMap[inputNode.id]
   const isHidden = getNodeState('isHidden', nodeUserState, inputNode)
-  if (isHidden) return ZERO_NODE_COUNTS
+  if (isHidden) return { ...ZERO_NODE_COUNTS, hidden: 1 }
   // Root node will already be in `unhiddenGraph`.
   const unhiddenNode =
     unhiddenGraph.nodeMap[inputNode.id] ?? cloneWithoutHierarchy(inputNode)
@@ -134,7 +133,8 @@ function computeUnhiddenNode(
         ),
       ZERO_NODE_COUNTS
     ) ?? ZERO_NODE_COUNTS
-  const nodeCounts: NodeCounts = {
+  const nodeCounts: TreeWareNetworkNodeUserStateCounts = {
+    hidden: 0,
     pinned: unhiddenNode.isPinned ? 1 : 0,
     collapsed: isNodeCollapsed(unhiddenNode) ? 1 : 0
   }
@@ -320,12 +320,4 @@ function ensureNodeAndAncestors(
     to.addNode(toNode)
     ensureNodeAndAncestors(fromNode.parent.id, from, to, toNode)
   }
-}
-
-function getNodeState<K extends keyof TreeWareNetworkNodeUserState>(
-  key: K,
-  nodeUserState: TreeWareNetworkNodeUserState,
-  node: TreeWareNetworkNode
-): TreeWareNetworkNodeUserState[K] {
-  return nodeUserState ? nodeUserState[key] : node[key]
 }

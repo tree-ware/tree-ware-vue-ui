@@ -45,3 +45,9 @@ export type TreeWareNetworkNodeComparator = (
   a: TreeWareNetworkNode,
   b: TreeWareNetworkNode
 ) => number
+
+export interface TreeWareNetworkNodeUserStateCounts {
+  hidden: number
+  pinned: number
+  collapsed: number
+}
