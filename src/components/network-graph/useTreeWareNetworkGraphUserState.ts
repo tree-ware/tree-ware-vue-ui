@@ -4,6 +4,7 @@ import {
   TreeWareNetworkLinkUserState,
   TreeWareNetworkLinkUserStateMap
 } from './TreeWareNetworkLink'
+import { getLinkState } from './TreeWareNetworkLinkUserStateUtil'
 import {
   TreeWareNetworkNode,
   TreeWareNetworkNodeUserState,
@@ -47,8 +48,10 @@ export function useTreeWareNetworkGraphUserState() {
     }
   }
 
-  function setLinkIsSelected(link: TreeWareNetworkLink, isSelected: boolean) {
-    setLinkState(link, 'isSelected', isSelected)
+  function toggleLinkSelection(link: TreeWareNetworkLink) {
+    const linkUserState = linkUserStateMap.value[link.id]
+    const isSelected = getLinkState('isSelected', linkUserState, link)
+    setLinkState(link, 'isSelected', !isSelected)
   }
 
   function setLinkState<K extends keyof TreeWareNetworkLinkUserState>(
@@ -78,6 +81,6 @@ export function useTreeWareNetworkGraphUserState() {
     setNodeIsPinned,
     setNodeIsExpanded,
     setNodeIsHidden,
-    setLinkIsSelected
+    toggleLinkSelection
   }
 }

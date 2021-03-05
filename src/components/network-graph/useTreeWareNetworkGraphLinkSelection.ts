@@ -70,7 +70,7 @@ export function useTreeWareNetworkGraphLinkSelection(
   }
 
   function toggleSelectAllLinks(event: any) {
-    if (isAllLinksSelected) unselectAllLinks()
+    if (isAllLinksSelected.value) unselectAllLinks()
     else selectAllLinks()
   }
 

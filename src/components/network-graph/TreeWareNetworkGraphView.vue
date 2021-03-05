@@ -36,12 +36,14 @@
         :link="link"
         :is-selectable="link.isSelectable"
         :column-gap="columnGap"
+        @link-click="linkClick"
       />
     </svg>
   </div>
 </template>
 
 <script lang="ts">
+import { useTreeWareNetworkLinkEmits } from '@/tree-ware-vue-ui/src/components/network-graph/useTreeWareNetworkLinkEmits'
 import { useTreeWareNetworkToolbarEmits } from '@/tree-ware-vue-ui/src/components/network-graph/useTreeWareNetworkToolbarEmits'
 import {
   defineComponent,
@@ -74,7 +76,8 @@ export default defineComponent({
     return {
       columnGap,
       linkTypes,
-      ...useTreeWareNetworkToolbarEmits(emit, 'TreeWareNetworkGraphView')
+      ...useTreeWareNetworkToolbarEmits(emit, 'TreeWareNetworkGraphView'),
+      ...useTreeWareNetworkLinkEmits(emit, 'TreeWareNetworkGraphView')
     }
   }
 })

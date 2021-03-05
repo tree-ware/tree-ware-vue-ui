@@ -1,4 +1,3 @@
-import { TreeWareNetworkLinkUserState } from './TreeWareNetworkLink'
 import {
   TreeWareNetworkNode,
   TreeWareNetworkNodeComparator,
@@ -10,10 +9,6 @@ export const defaultTreeWareNetworkNodeUserState: TreeWareNetworkNodeUserState =
   isPinned: false,
   isExpanded: false,
   isHidden: false
-}
-
-export const defaultTreeWareNetworkLinkUserState: TreeWareNetworkLinkUserState = {
-  isSelected: false
 }
 
 export const treeWareNetworkNodeUserControlNone: TreeWareNetworkNodeUserControl = {

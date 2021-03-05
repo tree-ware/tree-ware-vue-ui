@@ -1,11 +1,12 @@
 <template>
-  <g :class="linkClasses">
+  <g @click="linkClick(link)" :class="linkClasses">
     <path class="link-start" :marker-end="arrowHeadUrl" :d="linkPaths[0]" />
     <path class="link-end" :d="linkPaths[1]" />
   </g>
 </template>
 
 <script lang="ts">
+import { useTreeWareNetworkLinkEmits } from '@/tree-ware-vue-ui/src/components/network-graph/useTreeWareNetworkLinkEmits'
 import { defineComponent, PropType, toRefs } from '@vue/composition-api'
 import { TreeWareNetworkLink } from './TreeWareNetworkLink'
 import { useTreeWareNetworkLink } from './useTreeWareNetworkLink'
@@ -15,9 +16,12 @@ export default defineComponent({
     link: { type: Object as PropType<TreeWareNetworkLink>, required: true },
     columnGap: { type: Number, default: 100 }
   },
-  setup(props) {
+  setup(props, { emit }) {
     const { link, columnGap } = toRefs(props)
-    return useTreeWareNetworkLink(link, columnGap)
+    return {
+      ...useTreeWareNetworkLink(link, columnGap),
+      ...useTreeWareNetworkLinkEmits(emit, 'TreeWareNetworkLinkView')
+    }
   }
 })
 </script>
@@ -31,6 +35,7 @@ $selected-hover-link-width: 5px;
 .tree-ware-network-link-view {
   pointer-events: auto;
   fill: none;
+  stroke-linecap: round;
   stroke-width: $default-link-width;
 
   &.selectable {

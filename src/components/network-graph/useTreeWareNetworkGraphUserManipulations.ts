@@ -7,6 +7,11 @@ import {
   TreeWareNetworkLinkComparator,
   TreeWareNetworkLinkUserStateMap
 } from './TreeWareNetworkLink'
+import { getLinkState } from './TreeWareNetworkLinkUserStateUtil'
+import {
+  cloneLink,
+  defaultTreeWareNetworkLinkUserState
+} from './TreeWareNetworkLinkUtil'
 import {
   TreeWareNetworkNode,
   TreeWareNetworkNodeComparator,
@@ -22,7 +27,6 @@ import {
   addChildToParent,
   cloneSubHierarchy,
   cloneWithoutHierarchy,
-  defaultTreeWareNetworkLinkUserState,
   isNodeCollapsed
 } from './TreeWareNetworkNodeUtil'
 
@@ -60,7 +64,8 @@ function computeUserManipulatedGraph(
   // Filter out hidden nodes, compute number of pinned nodes.
   const { unhiddenGraph, nodeCounts } = computeUnhiddenGraph(
     inputGraph,
-    nodeUserStateMap
+    nodeUserStateMap,
+    linkUserStateMap
   )
   // Add grouped links for collapsed nodes if there are collapsed nodes.
   const groupedGraph =
@@ -77,7 +82,8 @@ function computeUserManipulatedGraph(
 
 function computeUnhiddenGraph(
   inputGraph: TreeWareNetworkGraph,
-  nodeUserStateMap: TreeWareNetworkNodeUserStateMap
+  nodeUserStateMap: TreeWareNetworkNodeUserStateMap,
+  linkUserStateMap: TreeWareNetworkLinkUserStateMap
 ): {
   unhiddenGraph: TreeWareNetworkGraph
   nodeCounts: TreeWareNetworkNodeUserStateCounts
@@ -97,7 +103,12 @@ function computeUnhiddenGraph(
       unhiddenGraph.containsNode(link.source.id) &&
       unhiddenGraph.containsNode(link.target.id)
     ) {
-      unhiddenGraph.addLink(link)
+      const linkUserState = linkUserStateMap[link.id]
+      const unhiddenLink = cloneLink(link)
+      unhiddenLink.isSelected =
+        unhiddenLink.canSelect &&
+        getLinkState('isSelected', linkUserState, unhiddenLink)
+      unhiddenGraph.addLink(unhiddenLink)
     }
   })
   return { unhiddenGraph, nodeCounts }
