@@ -33,3 +33,8 @@ export type TreeWareNetworkLinkComparator = (
   a: TreeWareNetworkLink,
   b: TreeWareNetworkLink
 ) => number
+
+export interface TreeWareNetworkLinkUserStateCounts {
+  selected: number
+  total: number
+}
