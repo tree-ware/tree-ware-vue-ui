@@ -1,5 +1,5 @@
 <template>
-  <div class="command-palette">
+  <div class="tree-ware-command-palette">
     <component
       :is="keyManager"
       :trigger-short-key="paletteTriggerShortKey"
