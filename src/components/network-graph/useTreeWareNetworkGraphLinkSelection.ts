@@ -1,4 +1,4 @@
-import { computed, Ref } from '@vue/composition-api'
+import { computed, Ref, watch } from '@vue/composition-api'
 import { TreeWareNetworkGraph } from './TreeWareNetworkGraph'
 import { TreeWareNetworkLinkUserStateMap } from './TreeWareNetworkLink'
 import {
@@ -9,7 +9,8 @@ import {
 
 export function useTreeWareNetworkGraphLinkSelection(
   inputGraph: Ref<TreeWareNetworkGraph>,
-  linkUserStateMap: Ref<TreeWareNetworkLinkUserStateMap>
+  linkUserStateMap: Ref<TreeWareNetworkLinkUserStateMap>,
+  selectAllLinksCheckbox?: Ref<HTMLInputElement | null>
 ) {
   const linkUserStateCounts = computed(() =>
     inputGraph.value.links.reduce((linkCounts, link) => {
@@ -22,28 +23,64 @@ export function useTreeWareNetworkGraphLinkSelection(
     }, ZERO_LINK_COUNTS)
   )
 
-  function isNoLinkSelected(): boolean {
-    return linkUserStateCounts.value.selected === 0
-  }
+  const isNoLinkSelected = computed(
+    () => linkUserStateCounts.value.selected === 0
+  )
 
-  function isFewLinksSelected(): boolean {
-    return (
+  const isFewLinksSelected = computed(
+    () =>
       0 < linkUserStateCounts.value.selected &&
       linkUserStateCounts.value.selected < linkUserStateCounts.value.total
-    )
-  }
+  )
 
-  function isAllLinksSelected(): boolean {
-    return (
+  const isAllLinksSelected = computed(
+    () =>
       linkUserStateCounts.value.selected > 0 &&
       linkUserStateCounts.value.selected === linkUserStateCounts.value.total
-    )
+  )
+
+  if (selectAllLinksCheckbox) {
+    watch(isFewLinksSelected, selected => {
+      if (selectAllLinksCheckbox.value) {
+        selectAllLinksCheckbox.value.indeterminate = selected
+      }
+    })
+  }
+
+  function selectAllLinks() {
+    setIsSelectedForAllLinks(true)
+  }
+
+  function unselectAllLinks() {
+    setIsSelectedForAllLinks(false)
+  }
+
+  function setIsSelectedForAllLinks(isSelected: boolean) {
+    // Accumulate changes so that they can be bulk applied.
+    const changes: TreeWareNetworkLinkUserStateMap = {}
+    inputGraph.value.links.forEach(link => {
+      const linkUserState = linkUserStateMap.value[link.id] ?? link
+      changes[link.id] = {
+        ...linkUserState,
+        isSelected
+      }
+    })
+    // Bulk apply the changes.
+    linkUserStateMap.value = { ...linkUserStateMap.value, ...changes }
+  }
+
+  function toggleSelectAllLinks(event: any) {
+    if (isAllLinksSelected) unselectAllLinks()
+    else selectAllLinks()
   }
 
   return {
     linkUserStateCounts,
     isNoLinkSelected,
     isFewLinksSelected,
-    isAllLinksSelected
+    isAllLinksSelected,
+    selectAllLinks,
+    unselectAllLinks,
+    toggleSelectAllLinks
   }
 }
