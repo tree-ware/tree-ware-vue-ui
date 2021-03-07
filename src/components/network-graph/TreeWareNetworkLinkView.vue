@@ -27,7 +27,7 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-$default-link-width: 1px;
+$default-link-width: 2px;
 $default-hover-link-width: 3px;
 $selected-link-width: 4px;
 $selected-hover-link-width: 5px;
