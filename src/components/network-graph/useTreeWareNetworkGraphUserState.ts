@@ -10,17 +10,33 @@ import {
   TreeWareNetworkNodeUserState,
   TreeWareNetworkNodeUserStateMap
 } from './TreeWareNetworkNode'
+import { getNodeState } from './TreeWareNetworkNodeUserStateUtil'
 
 export function useTreeWareNetworkGraphUserState() {
   const nodeUserStateMap = ref<TreeWareNetworkNodeUserStateMap>({})
   const linkUserStateMap = ref<TreeWareNetworkLinkUserStateMap>({})
 
+  function isNodePinned(node: TreeWareNetworkNode): boolean {
+    const nodeUserState = nodeUserStateMap.value[node.id]
+    return getNodeState('isPinned', nodeUserState, node)
+  }
+
   function setNodeIsPinned(node: TreeWareNetworkNode, isPinned: boolean) {
     setNodeState(node, 'isPinned', isPinned)
   }
 
+  function isNodeExpanded(node: TreeWareNetworkNode): boolean {
+    const nodeUserState = nodeUserStateMap.value[node.id]
+    return getNodeState('isExpanded', nodeUserState, node)
+  }
+
   function setNodeIsExpanded(node: TreeWareNetworkNode, isExpanded: boolean) {
     setNodeState(node, 'isExpanded', isExpanded)
+  }
+
+  function isNodeHidden(node: TreeWareNetworkNode): boolean {
+    const nodeUserState = nodeUserStateMap.value[node.id]
+    return getNodeState('isHidden', nodeUserState, node)
   }
 
   function setNodeIsHidden(node: TreeWareNetworkNode, isHidden: boolean) {
@@ -78,8 +94,11 @@ export function useTreeWareNetworkGraphUserState() {
   return {
     nodeUserStateMap,
     linkUserStateMap,
+    isNodePinned,
     setNodeIsPinned,
+    isNodeExpanded,
     setNodeIsExpanded,
+    isNodeHidden,
     setNodeIsHidden,
     toggleLinkSelection
   }

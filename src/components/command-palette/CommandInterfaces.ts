@@ -1,7 +1,7 @@
 export interface CommandItemData {
   description: string
   category?: number // optional
-  action: number
+  action: (() => void) | number // number type is deprecated
 }
 
 export interface CommandCategory {
