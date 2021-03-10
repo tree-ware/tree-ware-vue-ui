@@ -141,7 +141,7 @@ export default class TreeWareCommandPalette extends Vue {
     return this.commandItemDataList.filter(command =>
       command.description
         .toLowerCase()
-        .startsWith(this.searchString.toLowerCase())
+        .includes(this.searchString.toLowerCase())
     )
   }
 

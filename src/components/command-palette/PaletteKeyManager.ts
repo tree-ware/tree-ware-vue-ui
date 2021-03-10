@@ -60,6 +60,7 @@ export default class PaletteKeyManager extends Vue {
           }
         }
       } else {
+        if (e.shiftKey || e.altKey || e.ctrlKey || e.metaKey) return
         this.keyTrigger(e)
       }
     }
