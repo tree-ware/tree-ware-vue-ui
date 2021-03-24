@@ -21,10 +21,15 @@ export function useTreeWareNetworkToolbarEmits(
     emit('alert-click', node)
   }
 
+  function zoomClick(node: TreeWareNetworkNode) {
+    emit('zoom-click', node)
+  }
+
   return {
     pinClick,
     expandClick,
     hideClick,
-    alertClick
+    alertClick,
+    zoomClick
   }
 }
