@@ -25,7 +25,7 @@
         </a>
       </vx-tooltip>
 
-      <a v-if="node.canZoom" @click="zoomClick(node)" class="mr-2">
+      <a v-if="node.canZoom" @click="zoomClick(node.data)" class="mr-2">
         <vs-icon
           icon="fa-search-plus"
           icon-pack="fas"
