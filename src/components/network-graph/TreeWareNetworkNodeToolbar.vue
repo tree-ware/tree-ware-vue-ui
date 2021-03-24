@@ -24,14 +24,19 @@
           <vs-icon :icon="expandIcon" icon-pack="fas" color="primary"></vs-icon>
         </a>
       </vx-tooltip>
-
-      <a v-if="node.canZoom" @click="zoomClick(node.data)" class="mr-2">
-        <vs-icon
-          icon="fa-search-plus"
-          icon-pack="fas"
-          color="primary"
-        ></vs-icon>
-      </a>
+      <vx-tooltip
+        v-if="node.canZoom"
+        :text="userControlTooltip.canZoom"
+        class="inline mr-2"
+      >
+        <a @click="zoomClick(node.data)">
+          <vs-icon
+            icon="fa-search-plus"
+            icon-pack="fas"
+            color="primary"
+          ></vs-icon>
+        </a>
+      </vx-tooltip>
 
       <vx-tooltip
         v-if="node.canHide"
