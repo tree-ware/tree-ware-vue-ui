@@ -20,6 +20,7 @@
         @expand-click="expandClick"
         @hide-click="hideClick"
         @alert-click="alertClick"
+        @zoom-click="zoomClick"
         :class="child.classes"
       />
     </div>
