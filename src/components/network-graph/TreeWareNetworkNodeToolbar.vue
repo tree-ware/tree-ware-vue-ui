@@ -24,12 +24,13 @@
           <vs-icon :icon="expandIcon" icon-pack="fas" color="primary"></vs-icon>
         </a>
       </vx-tooltip>
+
       <vx-tooltip
         v-if="node.canZoom"
         :text="userControlTooltip.canZoom"
         class="inline mr-2"
       >
-        <a @click="zoomClick(node.data)">
+        <a @click="zoomClick(node)">
           <vs-icon
             icon="fa-search-plus"
             icon-pack="fas"
@@ -75,7 +76,7 @@ const defaultTreeWareNetworkNodeToolbarTooltip: TreeWareNetworkNodeToolbarToolti
   canPin: 'Pin this node',
   canExpand: 'Expand/collapse this node',
   canHide: 'Hide this node',
-  canZoom: 'Zoom this node'
+  canZoom: 'Zoom into this node'
 }
 
 export default defineComponent({

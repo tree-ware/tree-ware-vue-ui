@@ -21,8 +21,8 @@ export function useTreeWareNetworkToolbarEmits(
     emit('alert-click', node)
   }
 
-  function zoomClick(data: any) {
-    emit('zoom-click', data)
+  function zoomClick(node: TreeWareNetworkNode) {
+    emit('zoom-click', node)
   }
 
   return {
