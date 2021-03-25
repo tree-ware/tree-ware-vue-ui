@@ -71,13 +71,7 @@ import { computed, defineComponent, PropType } from '@vue/composition-api'
 import { TreeWareNetworkNode } from './TreeWareNetworkNode'
 import { TreeWareNetworkNodeToolbarTooltip } from './TreeWareNetworkNodeToolbarTypes'
 import { useTreeWareNetworkToolbarEmits } from './useTreeWareNetworkToolbarEmits'
-
-const defaultTreeWareNetworkNodeToolbarTooltip: TreeWareNetworkNodeToolbarTooltip = {
-  canPin: 'Pin this node',
-  canExpand: 'Expand/collapse this node',
-  canHide: 'Hide this node',
-  canZoom: 'Zoom into this node'
-}
+import defaultTreeWareNetworkNodeToolbarTooltip from './defaultTreeWareNetworkNodeToolbarTooltip'
 
 export default defineComponent({
   props: {
