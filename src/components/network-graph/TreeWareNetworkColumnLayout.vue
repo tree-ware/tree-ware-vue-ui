@@ -30,6 +30,7 @@ import {
 } from '@vue/composition-api'
 import { TreeWareNetworkNode } from './TreeWareNetworkNode'
 import { useTreeWareNetworkToolbarEmits } from './useTreeWareNetworkToolbarEmits'
+import { isColumnNodeData } from './ColumnNodeData'
 
 export default defineComponent({
   props: {
@@ -45,14 +46,19 @@ export default defineComponent({
       () => {
         const maxColumnIndex =
           node.value.group?.children.reduce(
-            (max, child) => (child.data.index > max ? child.data.index : max),
+            (max, child) =>
+              isColumnNodeData(child.data) && child.data.index > max
+                ? child.data.index
+                : max,
             0
           ) ?? 0
         const indexedColumns = new Array<TreeWareNetworkNode | undefined>(
           maxColumnIndex + 1
         )
         node.value.group?.children.forEach(child => {
-          indexedColumns[child.data.index] = child
+          if (isColumnNodeData(child.data)) {
+            indexedColumns[child.data.index] = child
+          }
         })
         return indexedColumns
       }

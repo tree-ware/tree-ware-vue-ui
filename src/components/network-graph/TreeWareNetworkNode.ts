@@ -20,6 +20,13 @@ export interface TreeWareNetworkNodeUserControl {
 
 export interface TreeWareNetworkNodeRenderState {}
 
+// Different nodes in the same graph can have different data types, so this
+// base data interface has a `type` discriminator to allow clients of the data
+// to determine the type.
+export interface TreeWareNetworkNodeData {
+  type: string
+}
+
 export interface TreeWareNetworkNode
   extends TreeWareNetworkNodeUserState,
     TreeWareNetworkNodeUserControl,
@@ -30,7 +37,7 @@ export interface TreeWareNetworkNode
   classes: string[]
   expandedContent: VueConstructor
   collapsedContent: VueConstructor | null
-  data: any // different nodes in the same graph can have different data types
+  data: TreeWareNetworkNodeData | null
 }
 
 export interface TreeWareNetworkNodeGroup {
