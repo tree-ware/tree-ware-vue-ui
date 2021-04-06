@@ -1,3 +1,4 @@
+import { TreeWareNetworkGraph } from './TreeWareNetworkGraph'
 import {
   TreeWareNetworkNode,
   TreeWareNetworkNodeComparator,
@@ -27,10 +28,20 @@ export const treeWareNetworkNodeUserControlAll: TreeWareNetworkNodeUserControl =
 
 export function addChildToParent(
   child: TreeWareNetworkNode,
-  parent: TreeWareNetworkNode
+  parent: TreeWareNetworkNode,
+  graph: TreeWareNetworkGraph
 ) {
   child.parent = parent
   parent.group?.children.push(child)
+  graph.addNode(child)
+}
+
+export function addChildToParentIfNotEmpty(
+  child: TreeWareNetworkNode,
+  parent: TreeWareNetworkNode,
+  graph: TreeWareNetworkGraph
+) {
+  if (child.group?.children.length) addChildToParent(child, parent, graph)
 }
 
 export function compareNodeIds(a: TreeWareNetworkNode, b: TreeWareNetworkNode) {

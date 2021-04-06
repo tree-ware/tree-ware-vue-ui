@@ -128,7 +128,9 @@ function computeUnhiddenNode(
     unhiddenGraph.nodeMap[inputNode.id] ?? cloneWithoutHierarchy(inputNode)
   unhiddenNode.isPinned = getNodeState('isPinned', nodeUserState, inputNode)
   unhiddenNode.isExpanded = getNodeState('isExpanded', nodeUserState, inputNode)
-  if (unhiddenParent) addChildToParent(unhiddenNode, unhiddenParent)
+  if (unhiddenParent) {
+    addChildToParent(unhiddenNode, unhiddenParent, unhiddenGraph)
+  }
   unhiddenGraph.addNode(unhiddenNode)
   const childrenCounts =
     inputNode.group?.children.reduce(
@@ -273,7 +275,7 @@ function computePinnedNode(
   const pinnedNodeHasChildren =
     pinnedNode.group && pinnedNode.group.children.length > 0
   if (inputNodeIsPinned || pinnedNodeHasChildren) {
-    if (pinnedParent) addChildToParent(pinnedNode, pinnedParent)
+    if (pinnedParent) addChildToParent(pinnedNode, pinnedParent, pinnedGraph)
     pinnedGraph.addNode(pinnedNode)
   }
   if (inputNodeIsPinned) {
@@ -286,8 +288,7 @@ function computePinnedNode(
       inputNode.group?.children.forEach(inputChild => {
         if (pinnedGraph.containsNode(inputChild.id)) return
         const includeChild = cloneSubHierarchy(inputChild)
-        addChildToParent(includeChild, pinnedNode)
-        pinnedGraph.addNode(includeChild)
+        addChildToParent(includeChild, pinnedNode, pinnedGraph)
       })
     }
   }
