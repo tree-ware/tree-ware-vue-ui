@@ -42,7 +42,21 @@ export interface TreeWareNetworkNode
 
 export interface TreeWareNetworkNodeGroup {
   name: string
+  imgImage?: ImgImageAttributes
+  divImage?: DivImageAttributes
+  childrenName?: string
   children: TreeWareNetworkNode[]
+}
+
+export interface ImgImageAttributes {
+  src: string
+  height: number
+  alt: string
+}
+
+export interface DivImageAttributes {
+  content: string
+  classes: string[]
 }
 
 export type TreeWareNetworkNodeUserStateMap = {

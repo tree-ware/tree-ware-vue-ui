@@ -3,9 +3,9 @@
     v-if="node.group && node.group.children.length"
     class="tree-ware-network-nested-layout"
   >
-    <div class="group-title">
+    <div v-if="node.group.childrenName" class="group-title">
       {{ node.group.children.length }}
-      {{ node.group.name }}
+      {{ node.group.childrenName }}
     </div>
 
     <!-- If node is expanded, show children as nodes -->
