@@ -9,6 +9,7 @@
       :nodes-element="nodesElement"
       @update:node="updateNode"
       @zoom:node="zoomNode"
+      @error="$emit('error', $event)"
       class="node"
       :style="configStyle"
     />

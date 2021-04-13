@@ -5,6 +5,7 @@
       :node="node.node"
       @update:node="updateNode"
       @zoom:node="zoomNode"
+      @error="$emit('error', $event)"
     />
     <template v-if="isGroup">
       <div class="group-title">
