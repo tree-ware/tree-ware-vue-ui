@@ -1,4 +1,5 @@
 import { VueConstructor } from 'vue'
+import { TreeWareImageData } from '../image/TreeWareImageInterfaces'
 
 // The Vue component instance (for `expandedContent` & `collapsedContent`)
 // will be passed a property named `node` of type `TreeWareNetworkNode`.
@@ -42,21 +43,9 @@ export interface TreeWareNetworkNode
 
 export interface TreeWareNetworkNodeGroup {
   name: string
-  imgImage?: ImgImageAttributes
-  divImage?: DivImageAttributes
+  image?: TreeWareImageData
   childrenName?: string
   children: TreeWareNetworkNode[]
-}
-
-export interface ImgImageAttributes {
-  src: string
-  height: number
-  alt: string
-}
-
-export interface DivImageAttributes {
-  content: string
-  classes: string[]
 }
 
 export type TreeWareNetworkNodeUserStateMap = {
