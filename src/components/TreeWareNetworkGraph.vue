@@ -40,7 +40,7 @@
         :nodes-element="nodesDiv"
         @update:node="updateNode"
         @zoom:node="zoomNode"
-        @error="$emit('error', $event)"
+        @error:node="$emit('error:node', $event)"
         :class="nodeColumn.class"
       />
     </div>
