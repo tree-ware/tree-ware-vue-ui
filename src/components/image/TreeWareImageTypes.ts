@@ -1,4 +1,4 @@
 export enum TreeWareImageType {
-  FILE,
+  URL,
   UNICODE
 }

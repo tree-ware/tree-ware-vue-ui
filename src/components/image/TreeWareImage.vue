@@ -1,6 +1,6 @@
 <template>
   <img
-    v-if="isFile"
+    v-if="isUrl"
     :src="imageData.content"
     :alt="imageData.description"
     :class="imageData.classes"
@@ -20,8 +20,8 @@ import { TreeWareImageType } from './TreeWareImageTypes'
 export default class TreeWareImage extends Vue {
   @Prop() readonly imageData!: TreeWareImageData
 
-  private get isFile(): boolean {
-    return this.imageData.type === TreeWareImageType.FILE
+  private get isUrl(): boolean {
+    return this.imageData.type === TreeWareImageType.URL
   }
 }
 </script>
