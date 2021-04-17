@@ -14,6 +14,7 @@
       :image-data="node.group.image"
     />
     <div v-if="label">{{ label }}</div>
+    <slot />
     <tree-ware-network-nested-layout
       :node="node"
       @pin-click="pinClick"
@@ -21,6 +22,7 @@
       @hide-click="hideClick"
       @zoom-click="zoomClick"
       @alert-click="alertClick"
+      class="mt-6"
     />
   </div>
 </template>
