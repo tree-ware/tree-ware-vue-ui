@@ -4,7 +4,8 @@ const defaultTreeWareNetworkNodeToolbarTooltip: TreeWareNetworkNodeToolbarToolti
   canPin: 'Pin this node',
   canExpand: 'Expand/collapse this node',
   canHide: 'Hide this node',
-  canZoom: 'Zoom into this node'
+  canZoom: 'Zoom into this node',
+  canLog: 'Log node data'
 }
 
 export default defaultTreeWareNetworkNodeToolbarTooltip

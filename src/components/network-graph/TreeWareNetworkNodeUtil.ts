@@ -16,14 +16,16 @@ export const treeWareNetworkNodeUserControlNone: TreeWareNetworkNodeUserControl 
   canPin: false,
   canExpand: false,
   canHide: false,
-  canZoom: false
+  canZoom: false,
+  canLog: false
 }
 
 export const treeWareNetworkNodeUserControlAll: TreeWareNetworkNodeUserControl = {
   canPin: true,
   canExpand: true,
   canHide: true,
-  canZoom: true
+  canZoom: true,
+  canLog: true
 }
 
 export function addChildToParent(

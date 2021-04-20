@@ -52,6 +52,16 @@
           ></vs-icon>
         </a>
       </vx-tooltip>
+
+      <vx-tooltip
+        v-if="node.canLog"
+        :text="userControlTooltip.canLog"
+        class="inline mr-2"
+      >
+        <a @click="logClick">
+          <vs-icon icon="fa-terminal" icon-pack="fas" color="primary"></vs-icon>
+        </a>
+      </vx-tooltip>
     </div>
 
     <vx-tooltip
@@ -91,8 +101,12 @@ export default defineComponent({
     const expandIcon = computed(() =>
       props.node.isExpanded ? 'fa-chevron-up' : 'fa-chevron-down'
     )
+    function logClick() {
+      console.info(props.node.data)
+    }
     return {
       expandIcon,
+      logClick,
       ...useTreeWareNetworkToolbarEmits(emit, 'TreeWareNetworkNodeToolbar')
     }
   }

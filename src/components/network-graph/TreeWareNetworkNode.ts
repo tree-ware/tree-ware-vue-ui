@@ -17,6 +17,7 @@ export interface TreeWareNetworkNodeUserControl {
   canExpand: boolean
   canHide: boolean
   canZoom: boolean
+  canLog: boolean
 }
 
 export interface TreeWareNetworkNodeRenderState {}
