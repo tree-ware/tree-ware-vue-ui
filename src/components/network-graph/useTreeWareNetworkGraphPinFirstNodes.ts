@@ -29,7 +29,15 @@ export function useTreeWareNetworkGraphPinFirstNodes(
     if (!nodes) return
     // TODO(deepak-nulu): depth first search instead of just one level.
     const node = nodes.find(node => !isNodeHidden(node) && !isNodePinned(node))
-    if (node) setNodeIsPinned(node, true)
+    if (node) pinNode(node)
+  }
+
+  function pinNode(node: TreeWareNetworkNode) {
+    if (node.group && node.group.children.length) {
+      pinNode(node.group.children[0])
+    } else {
+      setNodeIsPinned(node, true)
+    }
   }
 
   return {
