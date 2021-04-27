@@ -1,6 +1,6 @@
 <template>
   <div class="tree-ware-network-node-toolbar">
-    <div class="toolbar flex flex-row mb-2">
+    <div class="toolbar flex flex-row">
       <vx-tooltip
         v-if="node.canPin"
         :text="userControlTooltip.canPin"
