@@ -116,6 +116,7 @@ export default defineComponent({
 <style lang="scss" scoped>
 .tree-ware-network-node-toolbar {
   margin-bottom: 1rem;
+  position: relative;
 
   .toolbar {
     a {
@@ -139,8 +140,8 @@ export default defineComponent({
 
   .alert-count {
     position: absolute;
-    right: -1.1rem;
-    top: -1rem;
+    right: -2rem;
+    top: -2rem;
   }
 }
 </style>
