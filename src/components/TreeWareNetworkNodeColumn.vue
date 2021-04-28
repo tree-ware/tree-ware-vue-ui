@@ -46,7 +46,7 @@ export default class TreeWareNetworkNodeColumn<N> extends Vue {
 
   private get configStyle(): {} {
     return {
-      width: `${this.nodeConfig.width}px`
+      'min-width': `${this.nodeConfig.minWidth}px`
     }
   }
 
