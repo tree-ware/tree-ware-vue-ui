@@ -1,3 +1,4 @@
+import { partition } from '../../utilities/array'
 import { TreeWareNetworkGraph } from './TreeWareNetworkGraph'
 import {
   TreeWareNetworkNode,
@@ -107,4 +108,32 @@ export function getHighestCollapsedAncestor(
   if (!node.parent) return currentHighest
   const newHighest = isNodeCollapsed(node.parent) ? node.parent : currentHighest
   return getHighestCollapsedAncestor(node.parent, newHighest)
+}
+
+export function getChildNode(
+  parent: TreeWareNetworkNode,
+  childId: string
+): TreeWareNetworkNode | undefined {
+  return parent.group?.children?.find(child => child.id === childId)
+}
+
+export function getLeafNodes(
+  parent: TreeWareNetworkNode
+): TreeWareNetworkNode[] {
+  const leaves: TreeWareNetworkNode[] = []
+  addLeafNodes(parent, leaves)
+  return leaves
+}
+
+function addLeafNodes(
+  parent: TreeWareNetworkNode,
+  leaves: TreeWareNetworkNode[]
+) {
+  const children = parent.group?.children ?? []
+  const [childGroups, childLeaves] = partition(
+    children,
+    child => child.group !== null
+  )
+  childLeaves.forEach(leaf => leaves.push(leaf))
+  childGroups.forEach(group => addLeafNodes(group, leaves))
 }
