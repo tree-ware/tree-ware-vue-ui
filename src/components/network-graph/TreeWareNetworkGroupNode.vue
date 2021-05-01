@@ -1,5 +1,5 @@
 <template>
-  <div :class="node.classes">
+  <div :class="classes">
     <tree-ware-network-node-toolbar
       :node="node"
       :user-control-tooltip="userControlTooltip"
@@ -54,6 +54,11 @@ export default defineComponent({
   setup(props, { emit }) {
     const { node } = toRefs(props)
 
+    const classes = computed(() => [
+      node.value.isExpanded ? 'expanded-group-node' : 'collapsed-group-node',
+      ...node.value.classes
+    ])
+
     const label = computed(() => node.value.group?.name)
 
     const userControlTooltip: TreeWareNetworkNodeToolbarTooltip = {
@@ -65,6 +70,7 @@ export default defineComponent({
     }
 
     return {
+      classes,
       label,
       userControlTooltip,
       ...useTreeWareNetworkToolbarEmits(emit)
