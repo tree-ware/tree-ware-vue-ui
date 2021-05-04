@@ -21,6 +21,7 @@
         @hide-click="hideClick"
         @alert-click="alertClick"
         @zoom-click="zoomClick"
+        @custom-node-event="customNodeEvent"
         :class="child.classes"
       />
     </div>
@@ -42,6 +43,7 @@
 import { defineComponent, PropType } from '@vue/composition-api'
 import VuePerfectScrollbar from 'vue-perfect-scrollbar'
 import { TreeWareNetworkNode } from './TreeWareNetworkNode'
+import { useTreeWareNetworkNodeEmits } from './useTreeWareNetworkNodeEmits'
 import { useTreeWareNetworkToolbarEmits } from './useTreeWareNetworkToolbarEmits'
 
 export default defineComponent({
@@ -54,7 +56,8 @@ export default defineComponent({
   components: { VuePerfectScrollbar },
   setup(props, { emit }) {
     return {
-      ...useTreeWareNetworkToolbarEmits(emit, 'TreeWareNetworkNestedLayout')
+      ...useTreeWareNetworkToolbarEmits(emit, 'TreeWareNetworkNestedLayout'),
+      ...useTreeWareNetworkNodeEmits(emit, 'TreeWareNetworkNestedLayout')
     }
   }
 })

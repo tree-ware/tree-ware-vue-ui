@@ -8,6 +8,7 @@
       @hide-click="hideClick"
       @zoom-click="zoomClick"
       @alert-click="alertClick"
+      @custom-node-event="customNodeEvent"
     />
     <tree-ware-image
       v-if="node.group && node.group.image"
@@ -22,6 +23,7 @@
       @hide-click="hideClick"
       @zoom-click="zoomClick"
       @alert-click="alertClick"
+      @custom-node-event="customNodeEvent"
       class="mt-6"
     />
   </div>
@@ -40,6 +42,7 @@ import TreeWareNetworkNestedLayout from './TreeWareNetworkNestedLayout.vue'
 import { TreeWareNetworkNode } from './TreeWareNetworkNode'
 import TreeWareNetworkNodeToolbar from './TreeWareNetworkNodeToolbar.vue'
 import { TreeWareNetworkNodeToolbarTooltip } from './TreeWareNetworkNodeToolbarTypes'
+import { useTreeWareNetworkNodeEmits } from './useTreeWareNetworkNodeEmits'
 import { useTreeWareNetworkToolbarEmits } from './useTreeWareNetworkToolbarEmits'
 
 export default defineComponent({
@@ -73,7 +76,8 @@ export default defineComponent({
       classes,
       label,
       userControlTooltip,
-      ...useTreeWareNetworkToolbarEmits(emit)
+      ...useTreeWareNetworkToolbarEmits(emit),
+      ...useTreeWareNetworkNodeEmits(emit)
     }
   }
 })

@@ -9,6 +9,7 @@
       @hide-click="hideClick"
       @alert-click="alertClick"
       @zoom-click="zoomClick"
+      @custom-node-event="customNodeEvent"
       class="root"
     />
 
@@ -55,6 +56,7 @@ import {
 import { TreeWareNetworkGraph } from './TreeWareNetworkGraph'
 import TreeWareNetworkLinkView from './TreeWareNetworkLinkView.vue'
 import { useTreeWareNetworkGraph } from './useTreeWareNetworkGraph'
+import { useTreeWareNetworkNodeEmits } from './useTreeWareNetworkNodeEmits'
 
 export default defineComponent({
   props: {
@@ -78,6 +80,7 @@ export default defineComponent({
       columnGap,
       linkTypes,
       ...useTreeWareNetworkToolbarEmits(emit, 'TreeWareNetworkGraphView'),
+      ...useTreeWareNetworkNodeEmits(emit, 'TreeWareNetworkGraphView'),
       ...useTreeWareNetworkLinkEmits(emit, 'TreeWareNetworkGraphView')
     }
   }

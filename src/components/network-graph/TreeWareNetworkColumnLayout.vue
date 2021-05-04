@@ -15,6 +15,7 @@
         @hide-click="hideClick"
         @alert-click="alertClick"
         @zoom-click="zoomClick"
+        @custom-node-event="customNodeEvent"
       />
     </div>
   </div>
@@ -28,9 +29,10 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api'
-import { TreeWareNetworkNode } from './TreeWareNetworkNode'
-import { useTreeWareNetworkToolbarEmits } from './useTreeWareNetworkToolbarEmits'
 import { isColumnNodeData } from './ColumnNodeData'
+import { TreeWareNetworkNode } from './TreeWareNetworkNode'
+import { useTreeWareNetworkNodeEmits } from './useTreeWareNetworkNodeEmits'
+import { useTreeWareNetworkToolbarEmits } from './useTreeWareNetworkToolbarEmits'
 
 export default defineComponent({
   props: {
@@ -66,7 +68,8 @@ export default defineComponent({
 
     return {
       columns,
-      ...useTreeWareNetworkToolbarEmits(emit, 'TreeWareNetworkColumnLayout')
+      ...useTreeWareNetworkToolbarEmits(emit, 'TreeWareNetworkColumnLayout'),
+      ...useTreeWareNetworkNodeEmits(emit, 'TreeWareNetworkColumnLayout')
     }
   }
 })
