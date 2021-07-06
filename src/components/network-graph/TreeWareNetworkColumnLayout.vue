@@ -77,12 +77,16 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 .tree-ware-network-column-layout {
-  display: grid;
-  grid-gap: 210px;
-  grid-template-areas: 'column0 column1 column2';
+  display: flex;
+  flex-direction: row;
 
   .column {
+    margin-left: 210px;
     min-width: 210px;
+
+    &:first-child {
+      margin-left: 0px;
+    }
   }
 }
 </style>
