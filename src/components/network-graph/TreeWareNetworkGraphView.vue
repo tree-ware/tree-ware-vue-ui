@@ -1,46 +1,48 @@
 <template>
-  <div class="tree-ware-network-graph-view">
-    <component
-      :is="graph.root.expandedContent"
-      :id="graph.root.id"
-      :node="graph.root"
-      @pin-click="pinClick"
-      @expand-click="expandClick"
-      @hide-click="hideClick"
-      @alert-click="alertClick"
-      @zoom-click="zoomClick"
-      @custom-node-event="customNodeEvent"
-      class="root"
-    />
-
-    <svg class="links">
-      <defs>
-        <marker
-          v-for="linkType in linkTypes"
-          :key="linkType"
-          :id="linkType"
-          viewBox="0 -3 10 6"
-          refX="10"
-          refY="0"
-          markerUnits="userSpaceOnUse"
-          markerWidth="15"
-          markerHeight="9"
-          orient="auto"
-        >
-          <path d="M0,-3L10,0L0,3"></path>
-        </marker>
-      </defs>
-
-      <tree-ware-network-link-view
-        v-for="link in graph.links"
-        ref="linksVue"
-        :key="link.id"
-        :link="link"
-        :is-selectable="link.isSelectable"
-        :column-gap="columnGap"
-        @link-click="linkClick"
+  <div class="inline-block">
+    <div class="tree-ware-network-graph-view">
+      <component
+        :is="graph.root.expandedContent"
+        :id="graph.root.id"
+        :node="graph.root"
+        @pin-click="pinClick"
+        @expand-click="expandClick"
+        @hide-click="hideClick"
+        @alert-click="alertClick"
+        @zoom-click="zoomClick"
+        @custom-node-event="customNodeEvent"
+        class="root"
       />
-    </svg>
+
+      <svg class="links">
+        <defs>
+          <marker
+            v-for="linkType in linkTypes"
+            :key="linkType"
+            :id="linkType"
+            viewBox="0 -3 10 6"
+            refX="10"
+            refY="0"
+            markerUnits="userSpaceOnUse"
+            markerWidth="15"
+            markerHeight="9"
+            orient="auto"
+          >
+            <path d="M0,-3L10,0L0,3"></path>
+          </marker>
+        </defs>
+
+        <tree-ware-network-link-view
+          v-for="link in graph.links"
+          ref="linksVue"
+          :key="link.id"
+          :link="link"
+          :is-selectable="link.isSelectable"
+          :column-gap="columnGap"
+          @link-click="linkClick"
+        />
+      </svg>
+    </div>
   </div>
 </template>
 
